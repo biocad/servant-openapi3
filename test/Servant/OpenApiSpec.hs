@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
@@ -5,6 +6,9 @@
 {-# LANGUAGE QuasiQuotes        #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE PackageImports     #-}
+#if MIN_VERSION_servant(0,18,1)
+{-# LANGUAGE TypeFamilies       #-}
+#endif
 module Servant.OpenApiSpec where
 
 import           Control.Lens
@@ -37,6 +41,9 @@ spec = describe "HasOpenApi" $ do
   it "Comprehensive API" $ do
     let _x = toOpenApi comprehensiveAPI
     True `shouldBe` True -- type-level test
+#if MIN_VERSION_servant(0,18,1)
+  it "UVerb API" $ checkOpenApi uverbOpenApi uverbAPI
+#endif
 
 main :: IO ()
 main = hspec spec
@@ -418,3 +425,105 @@ getPostAPI = [aesonQQ|
 }
 |]
 
+-- =======================================================================
+-- UVerb API
+-- =======================================================================
+
+#if MIN_VERSION_servant(0,18,1)
+
+data FisxUser = FisxUser {name :: String}
+  deriving (Eq, Show, Generic)
+
+instance ToSchema FisxUser
+
+instance HasStatus FisxUser where
+  type StatusOf FisxUser = 203
+
+data ArianUser = ArianUser
+  deriving (Eq, Show, Generic)
+
+instance ToSchema ArianUser
+
+type UVerbAPI = "fisx" :> UVerb 'GET '[JSON] '[FisxUser, WithStatus 303 String]
+           :<|> "arian" :> UVerb 'POST '[JSON] '[WithStatus 201 ArianUser]
+
+uverbOpenApi :: OpenApi
+uverbOpenApi = toOpenApi (Proxy :: Proxy UVerbAPI)
+
+uverbAPI :: Value
+uverbAPI = [aesonQQ|
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "",
+    "title": ""
+  },
+  "components": {
+    "schemas": {
+      "ArianUser": {
+        "type": "string",
+        "enum": [
+          "ArianUser"
+        ]
+      },
+      "FisxUser": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/arian": {
+      "post": {
+        "responses": {
+          "201": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArianUser"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/fisx": {
+      "get": {
+        "responses": {
+          "303": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": ""
+          },
+          "203": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/FisxUser"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    }
+  }
+}
+|]
+
+#endif
