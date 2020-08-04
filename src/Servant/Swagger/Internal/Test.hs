@@ -6,19 +6,17 @@
 {-# LANGUAGE TypeOperators       #-}
 module Servant.Swagger.Internal.Test where
 
-import           Data.Aeson                         (ToJSON (..))
-import           Data.Aeson.Encode.Pretty           (encodePretty)
-import           Data.Swagger                       (Pattern, ToSchema,
-                                                     toSchema)
-import           Data.Swagger.Schema.Validation
-import           Data.Text                          (Text)
-import qualified Data.Text.Lazy                     as TL
-import qualified Data.Text.Lazy.Encoding            as TL
+import           Data.Aeson                     (ToJSON (..))
+import           Data.Aeson.Encode.Pretty       (encodePretty)
+import           Data.OpenApi                   (Pattern, ToSchema, toSchema)
+import           Data.OpenApi.Schema.Validation
+import           Data.Text                      (Text)
+import qualified Data.Text.Lazy                 as TL
+import qualified Data.Text.Lazy.Encoding        as TL
 import           Data.Typeable
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
-import           Test.QuickCheck                    (Arbitrary, Property,
-                                                     counterexample, property)
+import           Test.QuickCheck                (Arbitrary, Property, counterexample, property)
 
 import           Servant.API
 import           Servant.Swagger.Internal.TypeLevel

@@ -8,25 +8,25 @@
 module Servant.SwaggerSpec where
 
 import           Control.Lens
-import           Data.Aeson       (ToJSON(toJSON), Value, genericToJSON, encode)
+import           Data.Aeson                    (ToJSON (toJSON), Value, encode, genericToJSON)
 import           Data.Aeson.QQ.Simple
-import qualified Data.Aeson.Types as JSON
-import           Data.Char        (toLower)
-import           Data.Int         (Int64)
+import qualified Data.Aeson.Types              as JSON
+import           Data.Char                     (toLower)
+import           Data.Int                      (Int64)
+import           Data.OpenApi
 import           Data.Proxy
-import           Data.Swagger
-import           Data.Text        (Text)
+import           Data.Text                     (Text)
 import           Data.Time
 import           GHC.Generics
 import           Servant.API
 import           Servant.Swagger
 import           Servant.Test.ComprehensiveAPI (comprehensiveAPI)
-import           Test.Hspec       hiding (example)
+import           Test.Hspec                    hiding (example)
 
 checkAPI :: HasCallStack => HasSwagger api => Proxy api -> Value -> IO ()
 checkAPI proxy = checkSwagger (toSwagger proxy)
 
-checkSwagger :: HasCallStack => Swagger -> Value -> IO ()
+checkSwagger :: HasCallStack => OpenApi -> Value -> IO ()
 checkSwagger swag js = encode (toJSON swag) `shouldBe` (encode js)
 
 spec :: Spec
@@ -175,13 +175,13 @@ newtype Package = Package { packageName :: Text }
   deriving (Eq, Show, Generic)
 instance ToSchema Package
 
-hackageSwaggerWithTags :: Swagger
+hackageSwaggerWithTags :: OpenApi
 hackageSwaggerWithTags = toSwagger (Proxy :: Proxy HackageAPI)
   & servers .~ ["https://hackage.haskell.org"]
   & applyTagsFor usersOps    ["users"    & description ?~ "Operations about user"]
   & applyTagsFor packagesOps ["packages" & description ?~ "Query packages"]
   where
-    usersOps, packagesOps :: Traversal' Swagger Operation
+    usersOps, packagesOps :: Traversal' OpenApi Operation
     usersOps    = subOperations (Proxy :: Proxy HackageUserAPI)     (Proxy :: Proxy HackageAPI)
     packagesOps = subOperations (Proxy :: Proxy HackagePackagesAPI) (Proxy :: Proxy HackageAPI)
 
@@ -358,11 +358,11 @@ hackageAPI = [aesonQQ|
 
 type GetPostAPI = Get '[JSON] String :<|> Post '[JSON] String
 
-getPostSwagger :: Swagger
+getPostSwagger :: OpenApi
 getPostSwagger = toSwagger (Proxy :: Proxy GetPostAPI)
   & applyTagsFor getOps ["get" & description ?~ "GET operations"]
   where
-    getOps :: Traversal' Swagger Operation
+    getOps :: Traversal' OpenApi Operation
     getOps = subOperations (Proxy :: Proxy (Get '[JSON] String)) (Proxy :: Proxy GetPostAPI)
 
 getPostAPI :: Value

@@ -2,11 +2,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Swagger.Internal.Orphans where
 
-import           Data.Proxy
-                 (Proxy (..))
-import           Data.Swagger
-import           Servant.Types.SourceT
-                 (SourceT)
+import Data.OpenApi
+import Data.Proxy            (Proxy (..))
+import Servant.Types.SourceT (SourceT)
 
 -- | Pretend that 'SourceT m a' is '[a]'.
 --

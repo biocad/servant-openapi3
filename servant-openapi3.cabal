@@ -1,6 +1,6 @@
-name:                servant-swagger
-version:             1.1.9
-synopsis:            Generate a Swagger/OpenAPI/OAS 2.0 specification for your servant API.
+name:                servant-openapi3
+version:             2.0.0
+synopsis:            Generate a Swagger/OpenAPI/OAS 3.0 specification for your servant API.
 description:
   Swagger is a project used to describe and document RESTful APIs. The core of the 
   project is the [OpenAPI Specification (OAS)](https://swagger.io/docs/specification/about/). 
@@ -18,13 +18,13 @@ description:
   * generating clients and servers in many languages using [Swagger Codegen](http://swagger.io/swagger-codegen/);
   .
   * and [many others](http://swagger.io/open-source-integrations/).
-homepage:            https://github.com/haskell-servant/servant-swagger
-bug-reports:         https://github.com/haskell-servant/servant-swagger/issues
+homepage:            https://github.com/biocad/servant-openapi3
+bug-reports:         https://github.com/biocad/servant-openapi3/issues
 license:             BSD3
 license-file:        LICENSE
-author:              David Johnson, Nickolay Kudasov
-maintainer:          nickolay.kudasov@gmail.com
-copyright:           (c) 2015-2018, Servant contributors
+author:              David Johnson, Nickolay Kudasov, Maxim Koltsov
+maintainer:          nickolay.kudasov@gmail.com, kolmax94@gmail.com
+copyright:           (c) 2015-2020, Servant contributors
 category:            Web, Servant, Swagger
 build-type:          Custom
 cabal-version:       1.18
@@ -48,7 +48,7 @@ extra-doc-files:
 
 source-repository head
   type:     git
-  location: https://github.com/haskell-servant/servant-swagger.git
+  location: https://github.com/biocad/servant-openapi3.git
 
 custom-setup
   setup-depends:
@@ -82,7 +82,7 @@ library
                      , lens                      >=4.17     && <4.20
                      , servant                   >=0.17     && <0.18
                      , singleton-bool            >=0.1.4    && <0.2
-                     , swagger2                  >=2.3.0.1  && <2.7
+                     , openapi3                  >=3.0.0    && <4.0
                      , text                      >=1.2.3.0  && <1.3
                      , unordered-containers      >=0.2.9.0  && <0.3
 
@@ -118,8 +118,8 @@ test-suite spec
                   , lens
                   , lens-aeson >=1.0.2    && <1.2
                   , servant
-                  , servant-swagger
-                  , swagger2
+                  , servant-openapi3
+                  , openapi3
                   , text
                   , template-haskell
                   , utf8-string >=1.0.1.1 && <1.1

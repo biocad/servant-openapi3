@@ -18,28 +18,27 @@ import Prelude.Compat
 
 import           Control.Lens
 import           Data.Aeson
-import           Data.HashMap.Strict.InsOrd             (InsOrdHashMap)
-import qualified Data.HashMap.Strict.InsOrd             as InsOrdHashMap
-import           Data.Foldable (toList)
+import           Data.Foldable              (toList)
+import           Data.HashMap.Strict.InsOrd (InsOrdHashMap)
+import qualified Data.HashMap.Strict.InsOrd as InsOrdHashMap
+import           Data.OpenApi               hiding (Header, contentType)
+import qualified Data.OpenApi               as OpenApi
+import           Data.OpenApi.Declare
 import           Data.Proxy
 import           Data.Singletons.Bool
-import           Data.Swagger                           hiding (Header, contentType)
-import qualified Data.Swagger                           as Swagger
-import           Data.Swagger.Declare
-import           Data.Text                              (Text)
-import qualified Data.Text                              as Text
+import           Data.Text                  (Text)
+import qualified Data.Text                  as Text
 import           GHC.TypeLits
-import           Network.HTTP.Media                     (MediaType)
+import           Network.HTTP.Media         (MediaType)
 import           Servant.API
-import           Servant.API.Description                (FoldDescription,
-                                                         reflectDescription)
-import           Servant.API.Modifiers                  (FoldRequired)
+import           Servant.API.Description    (FoldDescription, reflectDescription)
+import           Servant.API.Modifiers      (FoldRequired)
 
 import           Servant.Swagger.Internal.TypeLevel.API
 
--- | Generate a Swagger specification for a servant API.
+-- | Generate a OpenApi specification for a servant API.
 --
--- To generate Swagger specification, your data types need
+-- To generate OpenApi specification, your data types need
 -- @'ToParamSchema'@ and/or @'ToSchema'@ instances.
 --
 -- @'ToParamSchema'@ is used for @'Capture'@, @'QueryParam'@ and @'Header'@.
@@ -65,12 +64,12 @@ import           Servant.Swagger.Internal.TypeLevel.API
 --
 -- type MyAPI = QueryParam "username" Username :> Get '[JSON] User
 --
--- mySwagger :: Swagger
+-- mySwagger :: OpenApi
 -- mySwagger = toSwagger (Proxy :: Proxy MyAPI)
 -- @
 class HasSwagger api where
-  -- | Generate a Swagger specification for a servant API.
-  toSwagger :: Proxy api -> Swagger
+  -- | Generate a OpenApi specification for a servant API.
+  toSwagger :: Proxy api -> OpenApi
 
 instance HasSwagger Raw where
   toSwagger _ = mempty & paths . at "/" ?~ mempty
@@ -84,16 +83,16 @@ instance HasSwagger EmptyAPI where
 subOperations :: (IsSubAPI sub api, HasSwagger sub) =>
   Proxy sub     -- ^ Part of a servant API.
   -> Proxy api  -- ^ The whole servant API.
-  -> Traversal' Swagger Operation
+  -> Traversal' OpenApi Operation
 subOperations sub _ = operationsOf (toSwagger sub)
 
--- | Make a singleton Swagger spec (with only one endpoint).
+-- | Make a singleton OpenApi spec (with only one endpoint).
 -- For endpoints with no content see 'mkEndpointNoContent'.
 mkEndpoint :: forall a cs hs proxy method status.
-  (ToSchema a, AllAccept cs, AllToResponseHeader hs, SwaggerMethod method, KnownNat status)
+  (ToSchema a, AllAccept cs, AllToResponseHeader hs, OpenApiMethod method, KnownNat status)
   => FilePath                                       -- ^ Endpoint path.
   -> proxy (Verb method status cs (Headers hs a))  -- ^ Method, content-types, headers and response.
-  -> Swagger
+  -> OpenApi
 mkEndpoint path proxy
   = mkEndpointWithSchemaRef (Just ref) path proxy
       & components.schemas .~ defs
@@ -102,21 +101,21 @@ mkEndpoint path proxy
 
 -- | Make a singletone 'Swagger' spec (with only one endpoint) and with no content schema.
 mkEndpointNoContent :: forall nocontent cs hs proxy method status.
-  (AllAccept cs, AllToResponseHeader hs, SwaggerMethod method, KnownNat status)
+  (AllAccept cs, AllToResponseHeader hs, OpenApiMethod method, KnownNat status)
   => FilePath                                               -- ^ Endpoint path.
   -> proxy (Verb method status cs (Headers hs nocontent))  -- ^ Method, content-types, headers and response.
-  -> Swagger
+  -> OpenApi
 mkEndpointNoContent path proxy
   = mkEndpointWithSchemaRef Nothing path proxy
 
 -- | Like @'mkEndpoint'@ but with explicit schema reference.
 -- Unlike @'mkEndpoint'@ this function does not update @'definitions'@.
 mkEndpointWithSchemaRef :: forall cs hs proxy method status a.
-  (AllAccept cs, AllToResponseHeader hs, SwaggerMethod method, KnownNat status)
+  (AllAccept cs, AllToResponseHeader hs, OpenApiMethod method, KnownNat status)
   => Maybe (Referenced Schema)
   -> FilePath
   -> proxy (Verb method status cs (Headers hs a))
-  -> Swagger
+  -> OpenApi
 mkEndpointWithSchemaRef mref path _ = mempty
   & paths.at path ?~
     (mempty & method ?~ (mempty
@@ -125,37 +124,37 @@ mkEndpointWithSchemaRef mref path _ = mempty
               [(t, mempty & schema .~ mref) | t <- responseContentTypes]
             & headers .~ responseHeaders)))
   where
-    method               = swaggerMethod (Proxy :: Proxy method)
+    method               = openApiMethod (Proxy :: Proxy method)
     code                 = fromIntegral (natVal (Proxy :: Proxy status))
     responseContentTypes = allContentType (Proxy :: Proxy cs)
     responseHeaders      = Inline <$> toAllResponseHeaders (Proxy :: Proxy hs)
 
 mkEndpointNoContentVerb :: forall proxy method.
-  (SwaggerMethod method)
+  (OpenApiMethod method)
   => FilePath                      -- ^ Endpoint path.
   -> proxy (NoContentVerb method)  -- ^ Method
-  -> Swagger
+  -> OpenApi
 mkEndpointNoContentVerb path _ = mempty
   & paths.at path ?~
     (mempty & method ?~ (mempty
       & at code ?~ Inline mempty))
   where
-    method               = swaggerMethod (Proxy :: Proxy method)
+    method               = openApiMethod (Proxy :: Proxy method)
     code                 = 204 -- hardcoded in servant-server
 
 -- | Add parameter to every operation in the spec.
-addParam :: Param -> Swagger -> Swagger
+addParam :: Param -> OpenApi -> OpenApi
 addParam param = allOperations.parameters %~ (Inline param :)
 
 -- | Add RequestBody to every operations in the spec.
-addRequestBody :: RequestBody -> Swagger -> Swagger
+addRequestBody :: RequestBody -> OpenApi -> OpenApi
 addRequestBody rb = allOperations . requestBody ?~ Inline rb
 
 -- | Format given text as inline code in Markdown.
 markdownCode :: Text -> Text
 markdownCode s = "`" <> s <> "`"
 
-addDefaultResponse404 :: ParamName -> Swagger -> Swagger
+addDefaultResponse404 :: ParamName -> OpenApi -> OpenApi
 addDefaultResponse404 pname = setResponseWith (\old _new -> alter404 old) 404 (return response404)
   where
     sname = markdownCode pname
@@ -163,7 +162,7 @@ addDefaultResponse404 pname = setResponseWith (\old _new -> alter404 old) 404 (r
     alter404 = description %~ ((sname <> " or ") <>)
     response404 = mempty & description .~ description404
 
-addDefaultResponse400 :: ParamName -> Swagger -> Swagger
+addDefaultResponse400 :: ParamName -> OpenApi -> OpenApi
 addDefaultResponse400 pname = setResponseWith (\old _new -> alter400 old) 400 (return response400)
   where
     sname = markdownCode pname
@@ -171,26 +170,26 @@ addDefaultResponse400 pname = setResponseWith (\old _new -> alter400 old) 400 (r
     alter400 = description %~ (<> (" or " <> sname))
     response400 = mempty & description .~ description400
 
--- | Methods, available for Swagger.
-class SwaggerMethod method where
-  swaggerMethod :: proxy method -> Lens' PathItem (Maybe Operation)
+-- | Methods, available for OpenApi.
+class OpenApiMethod method where
+  openApiMethod :: proxy method -> Lens' PathItem (Maybe Operation)
 
-instance SwaggerMethod 'GET     where swaggerMethod _ = get
-instance SwaggerMethod 'PUT     where swaggerMethod _ = put
-instance SwaggerMethod 'POST    where swaggerMethod _ = post
-instance SwaggerMethod 'DELETE  where swaggerMethod _ = delete
-instance SwaggerMethod 'OPTIONS where swaggerMethod _ = options
-instance SwaggerMethod 'HEAD    where swaggerMethod _ = head_
-instance SwaggerMethod 'PATCH   where swaggerMethod _ = patch
+instance OpenApiMethod 'GET     where openApiMethod _ = get
+instance OpenApiMethod 'PUT     where openApiMethod _ = put
+instance OpenApiMethod 'POST    where openApiMethod _ = post
+instance OpenApiMethod 'DELETE  where openApiMethod _ = delete
+instance OpenApiMethod 'OPTIONS where openApiMethod _ = options
+instance OpenApiMethod 'HEAD    where openApiMethod _ = head_
+instance OpenApiMethod 'PATCH   where openApiMethod _ = patch
 
-instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, KnownNat status, SwaggerMethod method) => HasSwagger (Verb method status cs a) where
+instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, KnownNat status, OpenApiMethod method) => HasSwagger (Verb method status cs a) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
 
 -- | @since 1.1.7
-instance (ToSchema a, Accept ct, KnownNat status, SwaggerMethod method) => HasSwagger (Stream method status fr ct a) where
+instance (ToSchema a, Accept ct, KnownNat status, OpenApiMethod method) => HasSwagger (Stream method status fr ct a) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status '[ct] (Headers '[] a)))
 
-instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod method)
+instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, AllToResponseHeader hs, KnownNat status, OpenApiMethod method)
   => HasSwagger (Verb method status cs (Headers hs a)) where
   toSwagger = mkEndpoint "/"
 
@@ -198,14 +197,14 @@ instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, AllToResponseHeader hs,
 -- A similar instance above will always use the more general
 -- polymorphic -- HasSwagger instance and will result in a type error
 -- since 'NoContent' does not have a 'ToSchema' instance.
-instance (AllAccept cs, KnownNat status, SwaggerMethod method) => HasSwagger (Verb method status cs NoContent) where
+instance (AllAccept cs, KnownNat status, OpenApiMethod method) => HasSwagger (Verb method status cs NoContent) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status cs (Headers '[] NoContent)))
 
-instance (AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod method)
+instance (AllAccept cs, AllToResponseHeader hs, KnownNat status, OpenApiMethod method)
   => HasSwagger (Verb method status cs (Headers hs NoContent)) where
   toSwagger = mkEndpointNoContent "/"
 
-instance (SwaggerMethod method) => HasSwagger (NoContentVerb method) where
+instance (OpenApiMethod method) => HasSwagger (NoContentVerb method) where
   toSwagger =  mkEndpointNoContentVerb "/"
 
 instance (HasSwagger a, HasSwagger b) => HasSwagger (a :<|> b) where
@@ -252,10 +251,9 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, KnownSymbol (FoldDes
         & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
         & required ?~ True
         & in_ .~ ParamPath
-        & schema ?~ Inline (mempty
-            & paramSchema .~ toParamSchema (Proxy :: Proxy a))
+        & schema ?~ Inline (toParamSchema (Proxy :: Proxy a))
 
--- | Swagger Spec doesn't have a notion of CaptureAll, this instance is the best effort.
+-- | OpenApi Spec doesn't have a notion of CaptureAll, this instance is the best effort.
 instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (CaptureAll sym a :> sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Capture sym a :> sub))
 
@@ -281,8 +279,7 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired
         & required ?~ reflectBool (Proxy :: Proxy (FoldRequired mods))
         & in_ .~ ParamQuery
         & schema ?~ Inline sch
-      sch = mempty
-        & paramSchema .~ toParamSchema (Proxy :: Proxy a)
+      sch = toParamSchema (Proxy :: Proxy a)
 
 instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (QueryParams sym a :> sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
@@ -293,12 +290,10 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (Query
       param = mempty
         & name .~ tname
         & in_ .~ ParamQuery
-        & schema ?~ Inline sch
-      sch = mempty
-        & paramSchema .~ pschema
+        & schema ?~ Inline pschema
       pschema = mempty
-        & type_ ?~ SwaggerArray
-        & items ?~ SwaggerItemsObject (Inline $ mempty & paramSchema .~ toParamSchema (Proxy :: Proxy a))
+        & type_ ?~ OpenApiArray
+        & items ?~ OpenApiItemsObject (Inline $ toParamSchema (Proxy :: Proxy a))
 
 instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (QueryFlag sym :> sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
@@ -310,9 +305,8 @@ instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (QueryFlag sym :> sub) 
         & name .~ tname
         & in_ .~ ParamQuery
         & allowEmptyValue ?~ True
-        & schema ?~ (Inline $ mempty
-            & paramSchema .~ (toParamSchema (Proxy :: Proxy Bool)
-                & default_ ?~ toJSON False))
+        & schema ?~ (Inline $ (toParamSchema (Proxy :: Proxy Bool))
+                & default_ ?~ toJSON False)
 
 instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired mods), KnownSymbol (FoldDescription mods)) => HasSwagger (Header' mods  sym a :> sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
@@ -327,8 +321,7 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired
         & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
         & required ?~ reflectBool (Proxy :: Proxy (FoldRequired mods))
         & in_ .~ ParamHeader
-        & schema ?~ (Inline $ mempty
-            & paramSchema .~ toParamSchema (Proxy :: Proxy a))
+        & schema ?~ (Inline $ toParamSchema (Proxy :: Proxy a))
 
 instance (ToSchema a, AllAccept cs, HasSwagger sub, KnownSymbol (FoldDescription mods)) => HasSwagger (ReqBody' mods cs a :> sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
@@ -375,16 +368,16 @@ instance (Accept c, AllAccept cs) => AllAccept (c ': cs) where
   allContentType _ = contentType (Proxy :: Proxy c) : allContentType (Proxy :: Proxy cs)
 
 class ToResponseHeader h where
-  toResponseHeader :: Proxy h -> (HeaderName, Swagger.Header)
+  toResponseHeader :: Proxy h -> (HeaderName, OpenApi.Header)
 
 instance (KnownSymbol sym, ToParamSchema a) => ToResponseHeader (Header sym a) where
-  toResponseHeader _ = (hname, Swagger.Header Nothing hschema)
+  toResponseHeader _ = (hname, mempty & schema ?~ hschema)
     where
       hname = Text.pack (symbolVal (Proxy :: Proxy sym))
-      hschema = Just $ Inline $ mempty & paramSchema .~ toParamSchema (Proxy :: Proxy a)
+      hschema = Inline $ toParamSchema (Proxy :: Proxy a)
 
 class AllToResponseHeader hs where
-  toAllResponseHeaders :: Proxy hs -> InsOrdHashMap HeaderName Swagger.Header
+  toAllResponseHeaders :: Proxy hs -> InsOrdHashMap HeaderName OpenApi.Header
 
 instance AllToResponseHeader '[] where
   toAllResponseHeaders _ = mempty
