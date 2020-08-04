@@ -1,11 +1,11 @@
-# servant-swagger
+# servant-openapi3
 
-[![Build Status](https://travis-ci.org/haskell-servant/servant-swagger.svg?branch=master)](https://travis-ci.org/haskell-servant/servant-swagger)
-[![Hackage](https://img.shields.io/hackage/v/servant-swagger.svg)](http://hackage.haskell.org/package/servant-swagger)
-[![Stackage LTS](http://stackage.org/package/servant-swagger/badge/lts)](http://stackage.org/lts/package/servant-swagger)
-[![Stackage Nightly](http://stackage.org/package/servant-swagger/badge/nightly)](http://stackage.org/nightly/package/servant-swagger)
+[![Hackage](https://img.shields.io/hackage/v/servant-openapi3.svg)](http://hackage.haskell.org/package/servant-openapi3)
+[![Build Status](https://travis-ci.org/biocad/servant-openapi3.svg?branch=master)](https://travis-ci.org/biocad/servant-openapi3)
+[![Stackage LTS](http://stackage.org/package/servant-openapi3/badge/lts)](http://stackage.org/lts/package/servant-openapi3)
+[![Stackage Nightly](http://stackage.org/package/servant-openapi3/badge/nightly)](http://stackage.org/nightly/package/servant-openapi3)
 
-Swagger 2.0 conforming json for [servant](https://github.com/haskell-servant/servant) APIs.
+OpenAPI 3.0 conforming json for [servant](https://github.com/haskell-servant/servant) APIs.
 
 ![servant-swagger robot](http://s16.postimg.org/rndz1wbyt/servant.png)
 
