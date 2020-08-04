@@ -90,16 +90,14 @@ install:
   - touch cabal.project
   - |
     echo "packages: ." >> cabal.project
-  - echo 'package servant-swagger' >> cabal.project
+  - echo 'package servant-openapi3' >> cabal.project
   - "echo '  ghc-options: -Werror=missing-methods' >> cabal.project"
   - |
-    echo "allow-newer: aeson-pretty-0.8.7:base-compat"          >> cabal.project
-    echo ""                                                     >> cabal.project
     echo "source-repository-package"                            >> cabal.project
     echo "  type:     git"                                      >> cabal.project
-    echo "  location: https://github.com/biocad/swagger2/"      >> cabal.project
-    echo "  tag:      ff879159c009627e1bc9414763b4834a2c9bfba7" >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(servant-swagger)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+    echo "  location: https://github.com/biocad/openapi3/"      >> cabal.project
+    echo "  tag:      bd9df532f2381c4b22fe86ef722715088f5cfa68" >> cabal.project
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(servant-openapi3)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "./configure.ac" ]; then (cd "." && autoreconf -i); fi
@@ -117,22 +115,20 @@ script:
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec tar -xvf '{}' \;
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec rm       '{}' \;
-  - PKGDIR_servant_swagger="$(find . -maxdepth 1 -type d -regex '.*/servant-swagger-[0-9.]*')"
+  - PKGDIR_servant_openapi3="$(find . -maxdepth 1 -type d -regex '.*/servant-openapi3-[0-9.]*')"
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
-    echo "packages: ${PKGDIR_servant_swagger}" >> cabal.project
-  - echo 'package servant-swagger' >> cabal.project
+    echo "packages: ${PKGDIR_servant_openapi3}" >> cabal.project
+  - echo 'package servant-openapi3' >> cabal.project
   - "echo '  ghc-options: -Werror=missing-methods' >> cabal.project"
   - |
-    echo "allow-newer: aeson-pretty-0.8.7:base-compat"          >> cabal.project
-    echo ""                                                     >> cabal.project
     echo "source-repository-package"                            >> cabal.project
     echo "  type:     git"                                      >> cabal.project
-    echo "  location: https://github.com/biocad/swagger2/"      >> cabal.project
-    echo "  tag:      ff879159c009627e1bc9414763b4834a2c9bfba7" >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(servant-swagger)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+    echo "  location: https://github.com/biocad/openapi3/"      >> cabal.project
+    echo "  tag:      bd9df532f2381c4b22fe86ef722715088f5cfa68" >> cabal.project
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(servant-openapi3)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   # Building...
@@ -144,7 +140,7 @@ script:
   # Testing...
   - ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all
   # cabal check...
-  - (cd ${PKGDIR_servant_swagger} && ${CABAL} -vnormal check)
+  - (cd ${PKGDIR_servant_openapi3} && ${CABAL} -vnormal check)
   # haddock...
   - ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all
   # Building without installed constraints for packages in global-db...
