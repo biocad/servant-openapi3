@@ -11,7 +11,7 @@
 #if __GLASGOW_HASKELL__ >= 806
 {-# LANGUAGE UndecidableInstances #-}
 #endif
-module Servant.Swagger.Internal where
+module Servant.OpenApi.Internal where
 
 import Prelude ()
 import Prelude.Compat
@@ -34,7 +34,7 @@ import           Servant.API
 import           Servant.API.Description    (FoldDescription, reflectDescription)
 import           Servant.API.Modifiers      (FoldRequired)
 
-import           Servant.Swagger.Internal.TypeLevel.API
+import           Servant.OpenApi.Internal.TypeLevel.API
 
 -- | Generate a OpenApi specification for a servant API.
 --
@@ -45,7 +45,8 @@ import           Servant.Swagger.Internal.TypeLevel.API
 -- @'ToSchema'@ is used for @'ReqBody'@ and response data types.
 --
 -- You can easily derive those instances via @Generic@.
--- For more information, refer to <http://hackage.haskell.org/package/swagger2/docs/Data-Swagger.html swagger2 documentation>.
+-- For more information, refer to
+-- <http://hackage.haskell.org/package/openapi3/docs/Data-OpenApi.html openapi3 documentation>.
 --
 -- Example:
 --
@@ -64,27 +65,27 @@ import           Servant.Swagger.Internal.TypeLevel.API
 --
 -- type MyAPI = QueryParam "username" Username :> Get '[JSON] User
 --
--- mySwagger :: OpenApi
--- mySwagger = toSwagger (Proxy :: Proxy MyAPI)
+-- myOpenApi :: OpenApi
+-- myOpenApi = toOpenApi (Proxy :: Proxy MyAPI)
 -- @
-class HasSwagger api where
+class HasOpenApi api where
   -- | Generate a OpenApi specification for a servant API.
-  toSwagger :: Proxy api -> OpenApi
+  toOpenApi :: Proxy api -> OpenApi
 
-instance HasSwagger Raw where
-  toSwagger _ = mempty & paths . at "/" ?~ mempty
+instance HasOpenApi Raw where
+  toOpenApi _ = mempty & paths . at "/" ?~ mempty
 
-instance HasSwagger EmptyAPI where
-  toSwagger _ = mempty
+instance HasOpenApi EmptyAPI where
+  toOpenApi _ = mempty
 
 -- | All operations of sub API.
 -- This is similar to @'operationsOf'@ but ensures that operations
 -- indeed belong to the API at compile time.
-subOperations :: (IsSubAPI sub api, HasSwagger sub) =>
+subOperations :: (IsSubAPI sub api, HasOpenApi sub) =>
   Proxy sub     -- ^ Part of a servant API.
   -> Proxy api  -- ^ The whole servant API.
   -> Traversal' OpenApi Operation
-subOperations sub _ = operationsOf (toSwagger sub)
+subOperations sub _ = operationsOf (toOpenApi sub)
 
 -- | Make a singleton OpenApi spec (with only one endpoint).
 -- For endpoints with no content see 'mkEndpointNoContent'.
@@ -99,7 +100,7 @@ mkEndpoint path proxy
   where
     (defs, ref) = runDeclare (declareSchemaRef (Proxy :: Proxy a)) mempty
 
--- | Make a singletone 'Swagger' spec (with only one endpoint) and with no content schema.
+-- | Make a singletone 'OpenApi' spec (with only one endpoint) and with no content schema.
 mkEndpointNoContent :: forall nocontent cs hs proxy method status.
   (AllAccept cs, AllToResponseHeader hs, OpenApiMethod method, KnownNat status)
   => FilePath                                               -- ^ Endpoint path.
@@ -182,61 +183,61 @@ instance OpenApiMethod 'OPTIONS where openApiMethod _ = options
 instance OpenApiMethod 'HEAD    where openApiMethod _ = head_
 instance OpenApiMethod 'PATCH   where openApiMethod _ = patch
 
-instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, KnownNat status, OpenApiMethod method) => HasSwagger (Verb method status cs a) where
-  toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
+instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, KnownNat status, OpenApiMethod method) => HasOpenApi (Verb method status cs a) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
 
 -- | @since 1.1.7
-instance (ToSchema a, Accept ct, KnownNat status, OpenApiMethod method) => HasSwagger (Stream method status fr ct a) where
-  toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status '[ct] (Headers '[] a)))
+instance (ToSchema a, Accept ct, KnownNat status, OpenApiMethod method) => HasOpenApi (Stream method status fr ct a) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy (Verb method status '[ct] (Headers '[] a)))
 
 instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, AllToResponseHeader hs, KnownNat status, OpenApiMethod method)
-  => HasSwagger (Verb method status cs (Headers hs a)) where
-  toSwagger = mkEndpoint "/"
+  => HasOpenApi (Verb method status cs (Headers hs a)) where
+  toOpenApi = mkEndpoint "/"
 
 -- ATTENTION: do not remove this instance!
 -- A similar instance above will always use the more general
--- polymorphic -- HasSwagger instance and will result in a type error
+-- polymorphic -- HasOpenApi instance and will result in a type error
 -- since 'NoContent' does not have a 'ToSchema' instance.
-instance (AllAccept cs, KnownNat status, OpenApiMethod method) => HasSwagger (Verb method status cs NoContent) where
-  toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status cs (Headers '[] NoContent)))
+instance (AllAccept cs, KnownNat status, OpenApiMethod method) => HasOpenApi (Verb method status cs NoContent) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy (Verb method status cs (Headers '[] NoContent)))
 
 instance (AllAccept cs, AllToResponseHeader hs, KnownNat status, OpenApiMethod method)
-  => HasSwagger (Verb method status cs (Headers hs NoContent)) where
-  toSwagger = mkEndpointNoContent "/"
+  => HasOpenApi (Verb method status cs (Headers hs NoContent)) where
+  toOpenApi = mkEndpointNoContent "/"
 
-instance (OpenApiMethod method) => HasSwagger (NoContentVerb method) where
-  toSwagger =  mkEndpointNoContentVerb "/"
+instance (OpenApiMethod method) => HasOpenApi (NoContentVerb method) where
+  toOpenApi =  mkEndpointNoContentVerb "/"
 
-instance (HasSwagger a, HasSwagger b) => HasSwagger (a :<|> b) where
-  toSwagger _ = toSwagger (Proxy :: Proxy a) <> toSwagger (Proxy :: Proxy b)
+instance (HasOpenApi a, HasOpenApi b) => HasOpenApi (a :<|> b) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy a) <> toOpenApi (Proxy :: Proxy b)
 
 -- | @'Vault'@ combinator does not change our specification at all.
-instance (HasSwagger sub) => HasSwagger (Vault :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (HasOpenApi sub) => HasOpenApi (Vault :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
 -- | @'IsSecure'@ combinator does not change our specification at all.
-instance (HasSwagger sub) => HasSwagger (IsSecure :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (HasOpenApi sub) => HasOpenApi (IsSecure :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
 -- | @'RemoteHost'@ combinator does not change our specification at all.
-instance (HasSwagger sub) => HasSwagger (RemoteHost :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (HasOpenApi sub) => HasOpenApi (RemoteHost :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
 -- | @'HttpVersion'@ combinator does not change our specification at all.
-instance (HasSwagger sub) => HasSwagger (HttpVersion :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (HasOpenApi sub) => HasOpenApi (HttpVersion :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
 -- | @'WithNamedContext'@ combinator does not change our specification at all.
-instance (HasSwagger sub) => HasSwagger (WithNamedContext x c sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (HasOpenApi sub) => HasOpenApi (WithNamedContext x c sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
-instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (sym :> sub) where
-  toSwagger _ = prependPath piece (toSwagger (Proxy :: Proxy sub))
+instance (KnownSymbol sym, HasOpenApi sub) => HasOpenApi (sym :> sub) where
+  toOpenApi _ = prependPath piece (toOpenApi (Proxy :: Proxy sub))
     where
       piece = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, KnownSymbol (FoldDescription mods)) => HasSwagger (Capture' mods sym a :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub, KnownSymbol (FoldDescription mods)) => HasOpenApi (Capture' mods sym a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addParam param
     & prependPath capture
     & addDefaultResponse404 tname
@@ -254,19 +255,19 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, KnownSymbol (FoldDes
         & schema ?~ Inline (toParamSchema (Proxy :: Proxy a))
 
 -- | OpenApi Spec doesn't have a notion of CaptureAll, this instance is the best effort.
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (CaptureAll sym a :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy (Capture sym a :> sub))
+instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub) => HasOpenApi (CaptureAll sym a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy (Capture sym a :> sub))
 
-instance (KnownSymbol desc, HasSwagger api) => HasSwagger (Description desc :> api) where
-  toSwagger _ = toSwagger (Proxy :: Proxy api)
+instance (KnownSymbol desc, HasOpenApi api) => HasOpenApi (Description desc :> api) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy api)
     & allOperations.description %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
-instance (KnownSymbol desc, HasSwagger api) => HasSwagger (Summary desc :> api) where
-  toSwagger _ = toSwagger (Proxy :: Proxy api)
+instance (KnownSymbol desc, HasOpenApi api) => HasOpenApi (Summary desc :> api) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy api)
     & allOperations.summary %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired mods), KnownSymbol (FoldDescription mods)) => HasSwagger (QueryParam' mods sym a :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub, SBoolI (FoldRequired mods), KnownSymbol (FoldDescription mods)) => HasOpenApi (QueryParam' mods sym a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addParam param
     & addDefaultResponse400 tname
     where
@@ -281,8 +282,8 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired
         & schema ?~ Inline sch
       sch = toParamSchema (Proxy :: Proxy a)
 
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (QueryParams sym a :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub) => HasOpenApi (QueryParams sym a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addParam param
     & addDefaultResponse400 tname
     where
@@ -295,8 +296,8 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (Query
         & type_ ?~ OpenApiArray
         & items ?~ OpenApiItemsObject (Inline $ toParamSchema (Proxy :: Proxy a))
 
-instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (QueryFlag sym :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (KnownSymbol sym, HasOpenApi sub) => HasOpenApi (QueryFlag sym :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addParam param
     & addDefaultResponse400 tname
     where
@@ -308,8 +309,8 @@ instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (QueryFlag sym :> sub) 
         & schema ?~ (Inline $ (toParamSchema (Proxy :: Proxy Bool))
                 & default_ ?~ toJSON False)
 
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired mods), KnownSymbol (FoldDescription mods)) => HasSwagger (Header' mods  sym a :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub, SBoolI (FoldRequired mods), KnownSymbol (FoldDescription mods)) => HasOpenApi (Header' mods  sym a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addParam param
     & addDefaultResponse400 tname
     where
@@ -323,8 +324,8 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired
         & in_ .~ ParamHeader
         & schema ?~ (Inline $ toParamSchema (Proxy :: Proxy a))
 
-instance (ToSchema a, AllAccept cs, HasSwagger sub, KnownSymbol (FoldDescription mods)) => HasSwagger (ReqBody' mods cs a :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (ToSchema a, AllAccept cs, HasOpenApi sub, KnownSymbol (FoldDescription mods)) => HasOpenApi (ReqBody' mods cs a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addRequestBody reqBody
     & addDefaultResponse400 tname
     & components.schemas %~ (<> defs)
@@ -340,8 +341,8 @@ instance (ToSchema a, AllAccept cs, HasSwagger sub, KnownSymbol (FoldDescription
 -- | This instance is an approximation.
 --
 -- @since 1.1.7
-instance (ToSchema a, Accept ct, HasSwagger sub, KnownSymbol (FoldDescription mods)) => HasSwagger (StreamBody' mods fr ct a :> sub) where
-  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+instance (ToSchema a, Accept ct, HasOpenApi sub, KnownSymbol (FoldDescription mods)) => HasOpenApi (StreamBody' mods fr ct a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addRequestBody reqBody
     & addDefaultResponse400 tname
     & components.schemas %~ (<> defs)

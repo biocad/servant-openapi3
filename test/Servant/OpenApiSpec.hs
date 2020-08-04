@@ -5,7 +5,7 @@
 {-# LANGUAGE QuasiQuotes        #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE PackageImports     #-}
-module Servant.SwaggerSpec where
+module Servant.OpenApiSpec where
 
 import           Control.Lens
 import           Data.Aeson                    (ToJSON (toJSON), Value, encode, genericToJSON)
@@ -19,23 +19,23 @@ import           Data.Text                     (Text)
 import           Data.Time
 import           GHC.Generics
 import           Servant.API
-import           Servant.Swagger
+import           Servant.OpenApi
 import           Servant.Test.ComprehensiveAPI (comprehensiveAPI)
 import           Test.Hspec                    hiding (example)
 
-checkAPI :: HasCallStack => HasSwagger api => Proxy api -> Value -> IO ()
-checkAPI proxy = checkSwagger (toSwagger proxy)
+checkAPI :: HasCallStack => HasOpenApi api => Proxy api -> Value -> IO ()
+checkAPI proxy = checkOpenApi (toOpenApi proxy)
 
-checkSwagger :: HasCallStack => OpenApi -> Value -> IO ()
-checkSwagger swag js = encode (toJSON swag) `shouldBe` (encode js)
+checkOpenApi :: HasCallStack => OpenApi -> Value -> IO ()
+checkOpenApi swag js = encode (toJSON swag) `shouldBe` (encode js)
 
 spec :: Spec
-spec = describe "HasSwagger" $ do
+spec = describe "HasOpenApi" $ do
   it "Todo API" $ checkAPI (Proxy :: Proxy TodoAPI) todoAPI
-  it "Hackage API (with tags)" $ checkSwagger hackageSwaggerWithTags hackageAPI
-  it "GetPost API (test subOperations)" $ checkSwagger getPostSwagger getPostAPI
+  it "Hackage API (with tags)" $ checkOpenApi hackageOpenApiWithTags hackageAPI
+  it "GetPost API (test subOperations)" $ checkOpenApi getPostOpenApi getPostAPI
   it "Comprehensive API" $ do
-    let _x = toSwagger comprehensiveAPI
+    let _x = toOpenApi comprehensiveAPI
     True `shouldBe` True -- type-level test
 
 main :: IO ()
@@ -175,8 +175,8 @@ newtype Package = Package { packageName :: Text }
   deriving (Eq, Show, Generic)
 instance ToSchema Package
 
-hackageSwaggerWithTags :: OpenApi
-hackageSwaggerWithTags = toSwagger (Proxy :: Proxy HackageAPI)
+hackageOpenApiWithTags :: OpenApi
+hackageOpenApiWithTags = toOpenApi (Proxy :: Proxy HackageAPI)
   & servers .~ ["https://hackage.haskell.org"]
   & applyTagsFor usersOps    ["users"    & description ?~ "Operations about user"]
   & applyTagsFor packagesOps ["packages" & description ?~ "Query packages"]
@@ -358,8 +358,8 @@ hackageAPI = [aesonQQ|
 
 type GetPostAPI = Get '[JSON] String :<|> Post '[JSON] String
 
-getPostSwagger :: OpenApi
-getPostSwagger = toSwagger (Proxy :: Proxy GetPostAPI)
+getPostOpenApi :: OpenApi
+getPostOpenApi = toOpenApi (Proxy :: Proxy GetPostAPI)
   & applyTagsFor getOps ["get" & description ?~ "GET operations"]
   where
     getOps :: Traversal' OpenApi Operation

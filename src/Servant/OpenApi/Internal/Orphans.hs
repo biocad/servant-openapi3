@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Servant.Swagger.Internal.Orphans where
+module Servant.OpenApi.Internal.Orphans where
 
 import Data.OpenApi
 import Data.Proxy            (Proxy (..))

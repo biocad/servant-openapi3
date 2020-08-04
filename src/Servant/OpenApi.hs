@@ -1,25 +1,25 @@
 -- |
--- Module:      Servant.Swagger
+-- Module:      Servant.OpenApi
 -- License:     BSD3
 -- Maintainer:  Nickolay Kudasov <nickolay@getshoptv.com>
 -- Stability:   experimental
 --
 -- This module provides means to generate and manipulate
--- Swagger specification for servant APIs.
+-- OpenApi specification for servant APIs.
 --
--- Swagger is a project used to describe and document RESTful APIs.
+-- OpenApi is a project used to describe and document RESTful APIs.
 --
--- The Swagger specification defines a set of files required to describe such an API.
--- These files can then be used by the Swagger-UI project to display the API
--- and Swagger-Codegen to generate clients in various languages.
+-- The OpenApi specification defines a set of files required to describe such an API.
+-- These files can then be used by the OpenApi-UI project to display the API
+-- and OpenApi-Codegen to generate clients in various languages.
 -- Additional utilities can also take advantage of the resulting files, such as testing tools.
 --
--- For more information see <http://swagger.io/ Swagger documentation>.
-module Servant.Swagger (
+-- For more information see <http://swagger.io/ OpenApi documentation>.
+module Servant.OpenApi (
   -- * How to use this library
   -- $howto
 
-  -- ** Generate @'Swagger'@
+  -- ** Generate @'OpenApi'@
   -- $generate
 
   -- ** Annotate
@@ -31,8 +31,8 @@ module Servant.Swagger (
   -- ** Serve
   -- $serve
 
-  -- * @'HasSwagger'@ class
-  HasSwagger(..),
+  -- * @'HasOpenApi'@ class
+  HasOpenApi(..),
 
   -- * Manipulation
   subOperations,
@@ -42,9 +42,9 @@ module Servant.Swagger (
   validateEveryToJSONWithPatternChecker,
 ) where
 
-import           Servant.Swagger.Internal
-import           Servant.Swagger.Test
-import           Servant.Swagger.Internal.Orphans ()
+import           Servant.OpenApi.Internal
+import           Servant.OpenApi.Test
+import           Servant.OpenApi.Internal.Orphans ()
 
 -- $setup
 -- >>> import Control.Applicative
@@ -76,7 +76,7 @@ import           Servant.Swagger.Internal.Orphans ()
 
 -- $howto
 --
--- This section explains how to use this library to generate Swagger specification,
+-- This section explains how to use this library to generate OpenApi specification,
 -- modify it and run automatic tests for a servant API.
 --
 -- For the purposes of this section we will use this servant API:
@@ -96,24 +96,24 @@ import           Servant.Swagger.Internal.Orphans ()
 -- @GetUser@ returns a user given his\/her ID. @PostUser@ creates a new user and returns his\/her ID.
 
 -- $generate
--- In order to generate @'Swagger'@ specification for a servant API, just use @'toSwagger'@:
+-- In order to generate @'OpenApi'@ specification for a servant API, just use @'toOpenApi'@:
 --
--- >>> BSL8.putStrLn $ encode $ toSwagger (Proxy :: Proxy UserAPI)
+-- >>> BSL8.putStrLn $ encode $ toOpenApi (Proxy :: Proxy UserAPI)
 -- {"openapi":"3.0.0","info":{"version":"","title":""},"paths":{"/":{"get":{"responses":{"200":{"content":{"application/json;charset=utf-8":{"schema":{"items":{"$ref":"#/components/schemas/User"},"type":"array"}}},"description":""}}},"post":{"requestBody":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}}},"responses":{"400":{"description":"Invalid `body`"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/UserId"}}},"description":""}}}},"/{user_id}":{"get":{"parameters":[{"required":true,"schema":{"type":"integer"},"in":"path","name":"user_id"}],"responses":{"404":{"description":"`user_id` not found"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}},"description":""}}}}},"components":{"schemas":{"User":{"required":["name","age"],"type":"object","properties":{"age":{"maximum":9223372036854775807,"minimum":-9223372036854775808,"type":"integer"},"name":{"type":"string"}}},"UserId":{"type":"integer"}}}}
 --
--- By default @'toSwagger'@ will generate specification for all API routes, parameters, headers, responses and data schemas.
+-- By default @'toOpenApi'@ will generate specification for all API routes, parameters, headers, responses and data schemas.
 --
 -- For some parameters it will also add 400 and/or 404 responses with a description mentioning parameter name.
 --
 -- Data schemas come from @'ToParamSchema'@ and @'ToSchema'@ classes.
 
 -- $annotate
--- While initially generated @'Swagger'@ looks good, it lacks some information it can't get from a servant API.
+-- While initially generated @'OpenApi'@ looks good, it lacks some information it can't get from a servant API.
 --
--- We can add this information using field lenses from @"Data.Swagger"@:
+-- We can add this information using field lenses from @"Data.OpenApi"@:
 --
 -- >>> :{
--- BSL8.putStrLn $ encode $ toSwagger (Proxy :: Proxy UserAPI)
+-- BSL8.putStrLn $ encode $ toOpenApi (Proxy :: Proxy UserAPI)
 --   & info.title        .~ "User API"
 --   & info.version      .~ "1.0"
 --   & info.description  ?~ "This is an API for the Users service"
@@ -128,13 +128,13 @@ import           Servant.Swagger.Internal.Orphans ()
 -- @'subOperations' sub api@ traverses all operations of the @api@ which are also present in @sub@.
 -- Furthermore, @sub@ is required to be an exact sub API of @api. Otherwise it will not typecheck.
 --
--- @"Data.Swagger.Operation"@ provides some useful helpers that can be used with @'subOperations'@.
+-- @"Data.OpenApi.Operation"@ provides some useful helpers that can be used with @'subOperations'@.
 -- One example is applying tags to certain endpoints:
 --
 -- >>> let getOps  = subOperations (Proxy :: Proxy (GetUsers :<|> GetUser)) (Proxy :: Proxy UserAPI)
 -- >>> let postOps = subOperations (Proxy :: Proxy PostUser) (Proxy :: Proxy UserAPI)
 -- >>> :{
--- BSL8.putStrLn $ encode $ toSwagger (Proxy :: Proxy UserAPI)
+-- BSL8.putStrLn $ encode $ toOpenApi (Proxy :: Proxy UserAPI)
 --   & applyTagsFor getOps  ["get"  & description ?~ "GET operations"]
 --   & applyTagsFor postOps ["post" & description ?~ "POST operations"]
 -- :}
@@ -170,7 +170,7 @@ import           Servant.Swagger.Internal.Orphans ()
 -- Although servant is great, chances are that your API clients don't use Haskell.
 -- In many cases @swagger.json@ serves as a specification, not a Haskell type.
 --
--- In this cases it is a good idea to store generated and annotated @'Swagger'@ in a @swagger.json@ file
+-- In this cases it is a good idea to store generated and annotated @'OpenApi'@ in a @swagger.json@ file
 -- under a version control system (such as Git, Subversion, Mercurial, etc.).
 --
 -- It is also recommended to version API based on changes to the @swagger.json@ rather than changes
@@ -179,6 +179,6 @@ import           Servant.Swagger.Internal.Orphans ()
 -- See <example/test/TodoSpec.hs TodoSpec.hs> for an example of a complete test suite for a swagger specification.
 
 -- $serve
--- If you're implementing a server for an API, you might also want to serve its @'Swagger'@ specification.
+-- If you're implementing a server for an API, you might also want to serve its @'OpenApi'@ specification.
 --
 -- See <example/src/Todo.hs Todo.hs> for an example of a server.

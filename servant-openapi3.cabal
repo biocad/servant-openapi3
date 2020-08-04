@@ -59,18 +59,18 @@ custom-setup
 library
   ghc-options:         -Wall
   exposed-modules:
-    Servant.Swagger
-    Servant.Swagger.Test
-    Servant.Swagger.TypeLevel
+    Servant.OpenApi
+    Servant.OpenApi.Test
+    Servant.OpenApi.TypeLevel
 
     -- Internal modules
-    Servant.Swagger.Internal
-    Servant.Swagger.Internal.Orphans
-    Servant.Swagger.Internal.Test
-    Servant.Swagger.Internal.TypeLevel
-    Servant.Swagger.Internal.TypeLevel.API
-    Servant.Swagger.Internal.TypeLevel.Every
-    Servant.Swagger.Internal.TypeLevel.TMap
+    Servant.OpenApi.Internal
+    Servant.OpenApi.Internal.Orphans
+    Servant.OpenApi.Internal.Test
+    Servant.OpenApi.Internal.TypeLevel
+    Servant.OpenApi.Internal.TypeLevel.API
+    Servant.OpenApi.Internal.TypeLevel.Every
+    Servant.OpenApi.Internal.TypeLevel.TMap
   hs-source-dirs:      src
   build-depends:       aeson                     >=1.4.2.0 && <1.6
                      , aeson-pretty              >=0.8.7    && <0.9
@@ -126,5 +126,5 @@ test-suite spec
                   , time
                   , vector
   other-modules:
-    Servant.SwaggerSpec
+    Servant.OpenApiSpec
   default-language: Haskell2010

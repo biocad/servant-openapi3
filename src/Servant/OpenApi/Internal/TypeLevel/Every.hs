@@ -16,12 +16,12 @@
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 #endif
-module Servant.Swagger.Internal.TypeLevel.Every where
+module Servant.OpenApi.Internal.TypeLevel.Every where
 
 import           Data.Proxy
 import           GHC.Exts                                (Constraint)
 
-import           Servant.Swagger.Internal.TypeLevel.TMap
+import           Servant.OpenApi.Internal.TypeLevel.TMap
 
 -- $setup
 -- >>> :set -XDataKinds

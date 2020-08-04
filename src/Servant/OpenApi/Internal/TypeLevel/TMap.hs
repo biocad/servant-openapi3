@@ -8,7 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Servant.Swagger.Internal.TypeLevel.TMap where
+module Servant.OpenApi.Internal.TypeLevel.TMap where
 
 import           Data.Proxy
 import           GHC.Exts   (Constraint)

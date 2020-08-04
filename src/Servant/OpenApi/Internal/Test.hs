@@ -4,7 +4,7 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
-module Servant.Swagger.Internal.Test where
+module Servant.OpenApi.Internal.Test where
 
 import           Data.Aeson                     (ToJSON (..))
 import           Data.Aeson.Encode.Pretty       (encodePretty)
@@ -19,7 +19,7 @@ import           Test.Hspec.QuickCheck
 import           Test.QuickCheck                (Arbitrary, Property, counterexample, property)
 
 import           Servant.API
-import           Servant.Swagger.Internal.TypeLevel
+import           Servant.OpenApi.Internal.TypeLevel
 
 -- $setup
 -- >>> import Control.Applicative
@@ -136,7 +136,7 @@ props _ f px = sequence_ specs
     aprop _ = prop (show (typeOf (undefined :: a))) (f :: a -> Property)
 
 -- | Pretty print validation errors
--- together with actual JSON and Swagger Schema
+-- together with actual JSON and OpenApi Schema
 -- (using 'encodePretty').
 --
 -- >>> import Data.Aeson
@@ -154,7 +154,7 @@ props _ f px = sequence_ specs
 --     "name": "John"
 -- }
 -- <BLANKLINE>
--- Swagger Schema:
+-- OpenApi Schema:
 -- {
 --     "required": [
 --         "name",
@@ -172,7 +172,7 @@ props _ f px = sequence_ specs
 -- }
 -- <BLANKLINE>
 --
--- FIXME: this belongs in "Data.Swagger.Schema.Validation" (in @swagger2@).
+-- FIXME: this belongs in "Data.OpenApi.Schema.Validation" (in @swagger2@).
 prettyValidateWith
   :: forall a. (ToJSON a, ToSchema a)
   => (a -> [ValidationError]) -> a -> Maybe String
@@ -185,7 +185,7 @@ prettyValidateWith f x =
       , "JSON value:"
       , ppJSONString json
       , ""
-      , "Swagger Schema:"
+      , "OpenApi Schema:"
       , ppJSONString (toJSON schema)
       ]
   where

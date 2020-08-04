@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Servant.Swagger.Internal.TypeLevel.API where
+module Servant.OpenApi.Internal.TypeLevel.API where
 
 import           Data.Type.Bool (If)
 import           GHC.Exts       (Constraint)
