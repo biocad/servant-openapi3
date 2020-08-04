@@ -7,7 +7,7 @@ import Prelude.Compat
 import           Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Paths_example
-import           Servant.Swagger.Test
+import           Servant.OpenApi.Test
 import           Test.Hspec
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances  ()

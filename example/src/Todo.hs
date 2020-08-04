@@ -10,14 +10,14 @@ import           Control.Lens
 import           Data.Aeson
 import           Data.Aeson.Encode.Pretty   (encodePretty)
 import qualified Data.ByteString.Lazy.Char8 as BL8
+import           Data.OpenApi               hiding (Server)
 import           Data.Proxy
-import           Data.Swagger
 import           Data.Text                  (Text)
 import           Data.Time                  (UTCTime (..), fromGregorian)
 import           Data.Typeable              (Typeable)
 import           GHC.Generics
 import           Servant
-import           Servant.Swagger
+import           Servant.OpenApi
 
 todoAPI :: Proxy TodoAPI
 todoAPI = Proxy
@@ -30,7 +30,7 @@ type TodoAPI
  :<|> "todo" :> Capture "id" TodoId :> ReqBody '[JSON] Todo :> Put '[JSON] TodoId
 
 -- | API for serving @swagger.json@.
-type SwaggerAPI = "swagger.json" :> Get '[JSON] Swagger
+type SwaggerAPI = "swagger.json" :> Get '[JSON] OpenApi
 
 -- | Combined API of a Todo service with Swagger documentation.
 type API = SwaggerAPI :<|> TodoAPI
@@ -57,8 +57,8 @@ instance ToParamSchema TodoId
 instance ToSchema TodoId
 
 -- | Swagger spec for Todo API.
-todoSwagger :: Swagger
-todoSwagger = toSwagger todoAPI
+todoSwagger :: OpenApi
+todoSwagger = toOpenApi todoAPI
   & info.title   .~ "Todo API"
   & info.version .~ "1.0"
   & info.description ?~ "This is an API that tests swagger integration"

@@ -90,17 +90,21 @@ install:
   - touch cabal.project
   - |
     echo "packages: ." >> cabal.project
+    echo "packages: example" >> cabal.project
   - echo 'package servant-openapi3' >> cabal.project
+  - "echo '  ghc-options: -Werror=missing-methods' >> cabal.project"
+  - echo 'package example' >> cabal.project
   - "echo '  ghc-options: -Werror=missing-methods' >> cabal.project"
   - |
     echo "source-repository-package"                            >> cabal.project
     echo "  type:     git"                                      >> cabal.project
     echo "  location: https://github.com/biocad/openapi3/"      >> cabal.project
     echo "  tag:      bd9df532f2381c4b22fe86ef722715088f5cfa68" >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(servant-openapi3)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(example|servant-openapi3)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "./configure.ac" ]; then (cd "." && autoreconf -i); fi
+  - if [ -f "example/configure.ac" ]; then (cd "example" && autoreconf -i); fi
   - ${CABAL} v2-freeze $WITHCOMPILER ${TEST} ${BENCH}
   - "cat cabal.project.freeze | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
   - rm  cabal.project.freeze
@@ -116,19 +120,23 @@ script:
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec tar -xvf '{}' \;
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec rm       '{}' \;
   - PKGDIR_servant_openapi3="$(find . -maxdepth 1 -type d -regex '.*/servant-openapi3-[0-9.]*')"
+  - PKGDIR_example="$(find . -maxdepth 1 -type d -regex '.*/example-[0-9.]*')"
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
     echo "packages: ${PKGDIR_servant_openapi3}" >> cabal.project
+    echo "packages: ${PKGDIR_example}" >> cabal.project
   - echo 'package servant-openapi3' >> cabal.project
+  - "echo '  ghc-options: -Werror=missing-methods' >> cabal.project"
+  - echo 'package example' >> cabal.project
   - "echo '  ghc-options: -Werror=missing-methods' >> cabal.project"
   - |
     echo "source-repository-package"                            >> cabal.project
     echo "  type:     git"                                      >> cabal.project
     echo "  location: https://github.com/biocad/openapi3/"      >> cabal.project
     echo "  tag:      bd9df532f2381c4b22fe86ef722715088f5cfa68" >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(servant-openapi3)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(example|servant-openapi3)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   # Building...
@@ -141,6 +149,7 @@ script:
   - ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all
   # cabal check...
   - (cd ${PKGDIR_servant_openapi3} && ${CABAL} -vnormal check)
+  - (cd ${PKGDIR_example} && ${CABAL} -vnormal check)
   # haddock...
   - ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all
   # Building without installed constraints for packages in global-db...

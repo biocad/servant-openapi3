@@ -1,5 +1,6 @@
 packages:
-    servant-openapi3.cabal
+    servant-openapi3.cabal,
+    example/example.cabal
 tests: true
 
 source-repository-package

@@ -1,17 +1,22 @@
 name:                example
 version:             1.0
-synopsis:            servant-swagger demonstration
-description:         servant-swagger demonstration
+synopsis:            servant-openapi3 demonstration
+description:         servant-openapi3 demonstration
 license:             BSD3
 license-file:        LICENSE
 author:              David Johnson, Nickolay Kudasov
 maintainer:          nickolay.kudasov@gmail.com
-copyright:           (c) 2015-2016, Servant contributors
+copyright:           (c) 2015-2020, Servant contributors
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 data-files:
   swagger.json
+
+tested-with:
+  GHC ==8.4.4
+   || ==8.6.5
+   || ==8.8.3
 
 library
   ghc-options:      -Wall
@@ -25,8 +30,8 @@ library
                 , lens
                 , servant
                 , servant-server
-                , servant-swagger
-                , swagger2
+                , servant-openapi3
+                , openapi3
                 , text
                 , time
   default-language: Haskell2010
@@ -55,7 +60,7 @@ test-suite swagger-server-spec
                   , bytestring
                   , example
                   , hspec
-                  , servant-swagger
+                  , servant-openapi3
                   , QuickCheck
                   , quickcheck-instances
   default-language: Haskell2010
