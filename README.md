@@ -43,5 +43,4 @@ Many Swagger tools, including server and client code generation for many languag
 
 We are happy to receive bug reports, fixes, documentation enhancements, and other improvements.
 
-Please report bugs via the [github issue tracker](https://github.com/haskell-servant/servant-swagger/issues).
-
+Please report bugs via the [github issue tracker](https://github.com/biocad/servant-openapi3/issues).
