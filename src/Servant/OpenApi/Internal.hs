@@ -11,11 +11,15 @@
 #if __GLASGOW_HASKELL__ >= 806
 {-# LANGUAGE UndecidableInstances #-}
 #endif
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Servant.OpenApi.Internal where
 
 import Prelude ()
 import Prelude.Compat
 
+#if MIN_VERSION_servant(0,18,1)
+import           Control.Applicative                    ((<|>))
+#endif
 import           Control.Lens
 import           Data.Aeson
 import           Data.Foldable              (toList)
@@ -182,6 +186,57 @@ instance OpenApiMethod 'DELETE  where openApiMethod _ = delete
 instance OpenApiMethod 'OPTIONS where openApiMethod _ = options
 instance OpenApiMethod 'HEAD    where openApiMethod _ = head_
 instance OpenApiMethod 'PATCH   where openApiMethod _ = patch
+
+#if MIN_VERSION_servant(0,18,1)
+instance HasOpenApi (UVerb method cs '[]) where
+  toOpenApi _ = mempty
+
+-- | @since <2.0.1.0>
+instance
+  {-# OVERLAPPABLE #-}
+  ( ToSchema a,
+    HasStatus a,
+    AllAccept cs,
+    OpenApiMethod method,
+    HasOpenApi (UVerb method cs as)
+  ) =>
+  HasOpenApi (UVerb method cs (a ': as))
+  where
+  toOpenApi _ =
+    toOpenApi (Proxy :: Proxy (Verb method (StatusOf a) cs a))
+      `combineSwagger` toOpenApi (Proxy :: Proxy (UVerb method cs as))
+    where
+      -- workaround for https://github.com/GetShopTV/swagger2/issues/218
+      combinePathItem :: PathItem -> PathItem -> PathItem
+      combinePathItem s t = PathItem
+        { _pathItemGet = _pathItemGet s <> _pathItemGet t
+        , _pathItemPut = _pathItemPut s <> _pathItemPut t
+        , _pathItemPost = _pathItemPost s <> _pathItemPost t
+        , _pathItemDelete = _pathItemDelete s <> _pathItemDelete t
+        , _pathItemOptions = _pathItemOptions s <> _pathItemOptions t
+        , _pathItemHead = _pathItemHead s <> _pathItemHead t
+        , _pathItemPatch = _pathItemPatch s <> _pathItemPatch t
+        , _pathItemTrace = _pathItemTrace s <> _pathItemTrace t
+        , _pathItemParameters = _pathItemParameters s <> _pathItemParameters t
+        , _pathItemSummary = _pathItemSummary s <|> _pathItemSummary t
+        , _pathItemDescription = _pathItemDescription s <|> _pathItemDescription t
+        , _pathItemServers = _pathItemServers s <> _pathItemServers t
+        }
+
+      combineSwagger :: OpenApi -> OpenApi -> OpenApi
+      combineSwagger s t = OpenApi
+        { _openApiInfo = _openApiInfo s <> _openApiInfo t
+        , _openApiServers = _openApiServers s <> _openApiServers t
+        , _openApiPaths = InsOrdHashMap.unionWith combinePathItem (_openApiPaths s) (_openApiPaths t)
+        , _openApiComponents = _openApiComponents s <> _openApiComponents t
+        , _openApiSecurity = _openApiSecurity s <> _openApiSecurity t
+        , _openApiTags = _openApiTags s <> _openApiTags t
+        , _openApiExternalDocs = _openApiExternalDocs s <|> _openApiExternalDocs t
+        }
+
+instance ToSchema a => ToSchema (WithStatus s a) where
+  declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy a)
+#endif
 
 instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, KnownNat status, OpenApiMethod method) => HasOpenApi (Verb method status cs a) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
