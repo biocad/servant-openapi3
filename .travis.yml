@@ -161,6 +161,8 @@ script:
   - if [ $HCNUMVER -ge 80800 ] ; then ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.18' all ; fi
   # Constraint set servant-0.18.1
   - if [ $HCNUMVER -ge 80800 ] ; then ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.18.1' all ; fi
+  # Constraint set servant-0.18.2
+  - if [ $HCNUMVER -ge 80800 ] ; then ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.18.2' all ; fi
 
 # REGENDATA ("0.10.3",["cabal.project","--config","cabal.haskell-ci"])
 # EOF

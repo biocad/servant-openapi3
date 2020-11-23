@@ -410,6 +410,11 @@ instance (ToSchema a, Accept ct, HasOpenApi sub, KnownSymbol (FoldDescription mo
         & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
         & content .~ InsOrdHashMap.fromList [(t, mempty & schema ?~ ref) | t <- toList $ contentTypes (Proxy :: Proxy ct)]
 
+#if MIN_VERSION_servant(0,18,2)
+instance (HasOpenApi sub) => HasOpenApi (Fragment a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
+#endif
+
 -- =======================================================================
 -- Below are the definitions that should be in Servant.API.ContentTypes
 -- =======================================================================
