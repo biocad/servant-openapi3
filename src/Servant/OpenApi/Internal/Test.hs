@@ -7,7 +7,8 @@
 module Servant.OpenApi.Internal.Test where
 
 import           Data.Aeson                     (ToJSON (..))
-import           Data.Aeson.Encode.Pretty       (encodePretty)
+import qualified Data.Aeson.Encode.Pretty       as P
+import qualified Data.ByteString.Lazy           as BSL
 import           Data.OpenApi                   (Pattern, ToSchema, toSchema)
 import           Data.OpenApi.Schema.Validation
 import           Data.Text                      (Text)
@@ -156,19 +157,19 @@ props _ f px = sequence_ specs
 -- <BLANKLINE>
 -- OpenApi Schema:
 -- {
+--     "properties": {
+--         "name": {
+--             "type": "string"
+--         },
+--         "phone": {
+--             "type": "integer"
+--         }
+--     },
 --     "required": [
 --         "name",
 --         "phone"
 --     ],
---     "type": "object",
---     "properties": {
---         "phone": {
---             "type": "integer"
---         },
---         "name": {
---             "type": "string"
---         }
---     }
+--     "type": "object"
 -- }
 -- <BLANKLINE>
 --
@@ -198,3 +199,6 @@ prettyValidateWith f x =
 maybeCounterExample :: Maybe String -> Property
 maybeCounterExample Nothing  = property True
 maybeCounterExample (Just s) = counterexample s (property False)
+
+encodePretty :: ToJSON a => a -> BSL.ByteString
+encodePretty = P.encodePretty' $ P.defConfig { P.confCompare = P.compare }

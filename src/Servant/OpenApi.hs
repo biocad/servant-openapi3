@@ -57,6 +57,7 @@ import           Servant.OpenApi.Internal.Orphans ()
 -- >>> import Test.Hspec
 -- >>> import Test.QuickCheck
 -- >>> import qualified Data.ByteString.Lazy.Char8 as BSL8
+-- >>> import Servant.OpenApi.Internal.Test
 -- >>> :set -XDataKinds
 -- >>> :set -XDeriveDataTypeable
 -- >>> :set -XDeriveGeneric
@@ -98,8 +99,114 @@ import           Servant.OpenApi.Internal.Orphans ()
 -- $generate
 -- In order to generate @'OpenApi'@ specification for a servant API, just use @'toOpenApi'@:
 --
--- >>> BSL8.putStrLn $ encode $ toOpenApi (Proxy :: Proxy UserAPI)
--- {"openapi":"3.0.0","info":{"version":"","title":""},"paths":{"/":{"get":{"responses":{"200":{"content":{"application/json;charset=utf-8":{"schema":{"items":{"$ref":"#/components/schemas/User"},"type":"array"}}},"description":""}}},"post":{"requestBody":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}}},"responses":{"400":{"description":"Invalid `body`"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/UserId"}}},"description":""}}}},"/{user_id}":{"get":{"parameters":[{"required":true,"schema":{"type":"integer"},"in":"path","name":"user_id"}],"responses":{"404":{"description":"`user_id` not found"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}},"description":""}}}}},"components":{"schemas":{"User":{"required":["name","age"],"type":"object","properties":{"age":{"maximum":9223372036854775807,"minimum":-9223372036854775808,"type":"integer"},"name":{"type":"string"}}},"UserId":{"type":"integer"}}}}
+-- >>> BSL8.putStrLn $ encodePretty $ toOpenApi (Proxy :: Proxy UserAPI)
+-- {
+--     "components": {
+--         "schemas": {
+--             "User": {
+--                 "properties": {
+--                     "age": {
+--                         "maximum": 9223372036854775807,
+--                         "minimum": -9223372036854775808,
+--                         "type": "integer"
+--                     },
+--                     "name": {
+--                         "type": "string"
+--                     }
+--                 },
+--                 "required": [
+--                     "name",
+--                     "age"
+--                 ],
+--                 "type": "object"
+--             },
+--             "UserId": {
+--                 "type": "integer"
+--             }
+--         }
+--     },
+--     "info": {
+--         "title": "",
+--         "version": ""
+--     },
+--     "openapi": "3.0.0",
+--     "paths": {
+--         "/": {
+--             "get": {
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "items": {
+--                                         "$ref": "#/components/schemas/User"
+--                                     },
+--                                     "type": "array"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     }
+--                 }
+--             },
+--             "post": {
+--                 "requestBody": {
+--                     "content": {
+--                         "application/json;charset=utf-8": {
+--                             "schema": {
+--                                 "$ref": "#/components/schemas/User"
+--                             }
+--                         }
+--                     }
+--                 },
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "$ref": "#/components/schemas/UserId"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     },
+--                     "400": {
+--                         "description": "Invalid `body`"
+--                     }
+--                 }
+--             }
+--         },
+--         "/{user_id}": {
+--             "get": {
+--                 "parameters": [
+--                     {
+--                         "in": "path",
+--                         "name": "user_id",
+--                         "required": true,
+--                         "schema": {
+--                             "type": "integer"
+--                         }
+--                     }
+--                 ],
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "$ref": "#/components/schemas/User"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     },
+--                     "404": {
+--                         "description": "`user_id` not found"
+--                     }
+--                 }
+--             }
+--         }
+--     }
+-- }
 --
 -- By default @'toOpenApi'@ will generate specification for all API routes, parameters, headers, responses and data schemas.
 --
@@ -113,14 +220,129 @@ import           Servant.OpenApi.Internal.Orphans ()
 -- We can add this information using field lenses from @"Data.OpenApi"@:
 --
 -- >>> :{
--- BSL8.putStrLn $ encode $ toOpenApi (Proxy :: Proxy UserAPI)
+-- BSL8.putStrLn $ encodePretty $ toOpenApi (Proxy :: Proxy UserAPI)
 --   & info.title        .~ "User API"
 --   & info.version      .~ "1.0"
 --   & info.description  ?~ "This is an API for the Users service"
 --   & info.license      ?~ "MIT"
 --   & servers           .~ ["https://example.com"]
 -- :}
--- {"openapi":"3.0.0","info":{"version":"1.0","title":"User API","license":{"name":"MIT"},"description":"This is an API for the Users service"},"servers":[{"url":"https://example.com"}],"paths":{"/":{"get":{"responses":{"200":{"content":{"application/json;charset=utf-8":{"schema":{"items":{"$ref":"#/components/schemas/User"},"type":"array"}}},"description":""}}},"post":{"requestBody":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}}},"responses":{"400":{"description":"Invalid `body`"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/UserId"}}},"description":""}}}},"/{user_id}":{"get":{"parameters":[{"required":true,"schema":{"type":"integer"},"in":"path","name":"user_id"}],"responses":{"404":{"description":"`user_id` not found"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}},"description":""}}}}},"components":{"schemas":{"User":{"required":["name","age"],"type":"object","properties":{"age":{"maximum":9223372036854775807,"minimum":-9223372036854775808,"type":"integer"},"name":{"type":"string"}}},"UserId":{"type":"integer"}}}}
+-- {
+--     "components": {
+--         "schemas": {
+--             "User": {
+--                 "properties": {
+--                     "age": {
+--                         "maximum": 9223372036854775807,
+--                         "minimum": -9223372036854775808,
+--                         "type": "integer"
+--                     },
+--                     "name": {
+--                         "type": "string"
+--                     }
+--                 },
+--                 "required": [
+--                     "name",
+--                     "age"
+--                 ],
+--                 "type": "object"
+--             },
+--             "UserId": {
+--                 "type": "integer"
+--             }
+--         }
+--     },
+--     "info": {
+--         "description": "This is an API for the Users service",
+--         "license": {
+--             "name": "MIT"
+--         },
+--         "title": "User API",
+--         "version": "1.0"
+--     },
+--     "openapi": "3.0.0",
+--     "paths": {
+--         "/": {
+--             "get": {
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "items": {
+--                                         "$ref": "#/components/schemas/User"
+--                                     },
+--                                     "type": "array"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     }
+--                 }
+--             },
+--             "post": {
+--                 "requestBody": {
+--                     "content": {
+--                         "application/json;charset=utf-8": {
+--                             "schema": {
+--                                 "$ref": "#/components/schemas/User"
+--                             }
+--                         }
+--                     }
+--                 },
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "$ref": "#/components/schemas/UserId"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     },
+--                     "400": {
+--                         "description": "Invalid `body`"
+--                     }
+--                 }
+--             }
+--         },
+--         "/{user_id}": {
+--             "get": {
+--                 "parameters": [
+--                     {
+--                         "in": "path",
+--                         "name": "user_id",
+--                         "required": true,
+--                         "schema": {
+--                             "type": "integer"
+--                         }
+--                     }
+--                 ],
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "$ref": "#/components/schemas/User"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     },
+--                     "404": {
+--                         "description": "`user_id` not found"
+--                     }
+--                 }
+--             }
+--         }
+--     },
+--     "servers": [
+--         {
+--             "url": "https://example.com"
+--         }
+--     ]
+-- }
 --
 -- It is also useful to annotate or modify certain endpoints.
 -- @'subOperations'@ provides a convenient way to zoom into a part of an API.
@@ -134,11 +356,136 @@ import           Servant.OpenApi.Internal.Orphans ()
 -- >>> let getOps  = subOperations (Proxy :: Proxy (GetUsers :<|> GetUser)) (Proxy :: Proxy UserAPI)
 -- >>> let postOps = subOperations (Proxy :: Proxy PostUser) (Proxy :: Proxy UserAPI)
 -- >>> :{
--- BSL8.putStrLn $ encode $ toOpenApi (Proxy :: Proxy UserAPI)
+-- BSL8.putStrLn $ encodePretty $ toOpenApi (Proxy :: Proxy UserAPI)
 --   & applyTagsFor getOps  ["get"  & description ?~ "GET operations"]
 --   & applyTagsFor postOps ["post" & description ?~ "POST operations"]
 -- :}
--- {"openapi":"3.0.0","info":{"version":"","title":""},"paths":{"/":{"get":{"tags":["get"],"responses":{"200":{"content":{"application/json;charset=utf-8":{"schema":{"items":{"$ref":"#/components/schemas/User"},"type":"array"}}},"description":""}}},"post":{"tags":["post"],"requestBody":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}}},"responses":{"400":{"description":"Invalid `body`"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/UserId"}}},"description":""}}}},"/{user_id}":{"get":{"tags":["get"],"parameters":[{"required":true,"schema":{"type":"integer"},"in":"path","name":"user_id"}],"responses":{"404":{"description":"`user_id` not found"},"200":{"content":{"application/json;charset=utf-8":{"schema":{"$ref":"#/components/schemas/User"}}},"description":""}}}}},"components":{"schemas":{"User":{"required":["name","age"],"type":"object","properties":{"age":{"maximum":9223372036854775807,"minimum":-9223372036854775808,"type":"integer"},"name":{"type":"string"}}},"UserId":{"type":"integer"}}},"tags":[{"name":"get","description":"GET operations"},{"name":"post","description":"POST operations"}]}
+-- {
+--     "components": {
+--         "schemas": {
+--             "User": {
+--                 "properties": {
+--                     "age": {
+--                         "maximum": 9223372036854775807,
+--                         "minimum": -9223372036854775808,
+--                         "type": "integer"
+--                     },
+--                     "name": {
+--                         "type": "string"
+--                     }
+--                 },
+--                 "required": [
+--                     "name",
+--                     "age"
+--                 ],
+--                 "type": "object"
+--             },
+--             "UserId": {
+--                 "type": "integer"
+--             }
+--         }
+--     },
+--     "info": {
+--         "title": "",
+--         "version": ""
+--     },
+--     "openapi": "3.0.0",
+--     "paths": {
+--         "/": {
+--             "get": {
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "items": {
+--                                         "$ref": "#/components/schemas/User"
+--                                     },
+--                                     "type": "array"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     }
+--                 },
+--                 "tags": [
+--                     "get"
+--                 ]
+--             },
+--             "post": {
+--                 "requestBody": {
+--                     "content": {
+--                         "application/json;charset=utf-8": {
+--                             "schema": {
+--                                 "$ref": "#/components/schemas/User"
+--                             }
+--                         }
+--                     }
+--                 },
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "$ref": "#/components/schemas/UserId"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     },
+--                     "400": {
+--                         "description": "Invalid `body`"
+--                     }
+--                 },
+--                 "tags": [
+--                     "post"
+--                 ]
+--             }
+--         },
+--         "/{user_id}": {
+--             "get": {
+--                 "parameters": [
+--                     {
+--                         "in": "path",
+--                         "name": "user_id",
+--                         "required": true,
+--                         "schema": {
+--                             "type": "integer"
+--                         }
+--                     }
+--                 ],
+--                 "responses": {
+--                     "200": {
+--                         "content": {
+--                             "application/json;charset=utf-8": {
+--                                 "schema": {
+--                                     "$ref": "#/components/schemas/User"
+--                                 }
+--                             }
+--                         },
+--                         "description": ""
+--                     },
+--                     "404": {
+--                         "description": "`user_id` not found"
+--                     }
+--                 },
+--                 "tags": [
+--                     "get"
+--                 ]
+--             }
+--         }
+--     },
+--     "tags": [
+--         {
+--             "description": "GET operations",
+--             "name": "get"
+--         },
+--         {
+--             "description": "POST operations",
+--             "name": "post"
+--         }
+--     ]
+-- }
 --
 -- This applies @\"get\"@ tag to the @GET@ endpoints and @\"post\"@ tag to the @POST@ endpoint of the User API.
 
