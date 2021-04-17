@@ -160,7 +160,6 @@ props _ f px = sequence_ specs
 --         "name",
 --         "phone"
 --     ],
---     "type": "object",
 --     "properties": {
 --         "phone": {
 --             "type": "integer"
@@ -168,7 +167,8 @@ props _ f px = sequence_ specs
 --         "name": {
 --             "type": "string"
 --         }
---     }
+--     },
+--     "type": "object"
 -- }
 -- <BLANKLINE>
 --

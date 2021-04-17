@@ -32,6 +32,7 @@ import           Data.Proxy
 import           Data.Singletons.Bool
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
+import           Data.Typeable              (Typeable)
 import           GHC.TypeLits
 import           Network.HTTP.Media         (MediaType)
 import           Servant.API
@@ -234,7 +235,7 @@ instance
         , _openApiExternalDocs = _openApiExternalDocs s <|> _openApiExternalDocs t
         }
 
-instance ToSchema a => ToSchema (WithStatus s a) where
+instance (Typeable (WithStatus s a), ToSchema a) => ToSchema (WithStatus s a) where
   declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy a)
 #endif
 
