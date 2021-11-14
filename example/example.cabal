@@ -56,7 +56,7 @@ test-suite swagger-server-spec
   other-modules:
     TodoSpec
     Paths_example
-  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.9
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.10
   build-depends:    base  == 4.*
                   , base-compat >= 0.6.0
                   , aeson >=0.11.2.0
