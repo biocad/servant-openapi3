@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE KindSignatures       #-}
@@ -7,14 +8,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Servant.OpenApi.Internal.TypeLevel.API where
 
-import           Data.Type.Bool (If)
-import           GHC.Exts       (Constraint)
+import           GHC.Exts            (Constraint)
 import           Servant.API
+#if MIN_VERSION_servant(0,19,0)
+import           Servant.API.Generic (ToServantApi)
+#endif
 
 -- | Build a list of endpoints from an API.
 type family EndpointsList api where
   EndpointsList (a :<|> b) = AppendList (EndpointsList a) (EndpointsList b)
   EndpointsList (e :> a)   = MapSub e (EndpointsList a)
+#if MIN_VERSION_servant(0,19,0)
+  EndpointsList (NamedRoutes api) = EndpointsList (ToServantApi api)
+#endif
   EndpointsList a = '[a]
 
 -- | Check whether @sub@ is a sub API of @api@.
@@ -43,6 +49,9 @@ type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
 type family IsIn sub api :: Constraint where
   IsIn e (a :<|> b) = Or (IsIn e a) (IsIn e b)
   IsIn (e :> a) (e :> b) = IsIn a b
+#if MIN_VERSION_servant(0,19,0)
+  IsIn e (NamedRoutes api) = IsIn e (ToServantApi api)
+#endif
   IsIn e e = ()
 
 -- | Check whether a type is a member of a list of types.
@@ -83,5 +92,7 @@ type family BodyTypes' c api :: [*] where
   BodyTypes' c (ReqBody' mods cs a :> api) = AddBodyType c cs a (BodyTypes' c api)
   BodyTypes' c (e :> api) = BodyTypes' c api
   BodyTypes' c (a :<|> b) = AppendList (BodyTypes' c a) (BodyTypes' c b)
+#if MIN_VERSION_servant(0,19,0)
+  BodyTypes' c (NamedRoutes api) = BodyTypes' c (ToServantApi api)
+#endif
   BodyTypes' c api = '[]
-
