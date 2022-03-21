@@ -1,5 +1,7 @@
 branches: master
 
+distribution: focal
+
 constraint-set servant-0.17
   ghc: >= 8.0 && <8.10
   constraints: servant ==0.17.*
