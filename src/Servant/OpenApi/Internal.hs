@@ -225,6 +225,7 @@ instance
         , _pathItemSummary = _pathItemSummary s <|> _pathItemSummary t
         , _pathItemDescription = _pathItemDescription s <|> _pathItemDescription t
         , _pathItemServers = _pathItemServers s <> _pathItemServers t
+        , _pathItemExtensions = _pathItemExtensions s <> _pathItemExtensions t
         }
 
       combineSwagger :: OpenApi -> OpenApi -> OpenApi
@@ -236,6 +237,7 @@ instance
         , _openApiSecurity = _openApiSecurity s <> _openApiSecurity t
         , _openApiTags = _openApiTags s <> _openApiTags t
         , _openApiExternalDocs = _openApiExternalDocs s <|> _openApiExternalDocs t
+        , _openApiExtensions = _openApiExtensions s <> _openApiExtensions t
         }
 
 instance (Typeable (WithStatus s a), ToSchema a) => ToSchema (WithStatus s a) where
