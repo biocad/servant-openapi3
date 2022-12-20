@@ -34,7 +34,7 @@ tested-with:
    || ==8.10.7
    || ==9.0.2
    || ==9.2.2
-   || ==9.4.2
+   || ==9.4.3
 
 extra-source-files:
     README.md
