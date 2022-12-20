@@ -229,7 +229,8 @@ instance
 
       combineSwagger :: OpenApi -> OpenApi -> OpenApi
       combineSwagger s t = OpenApi
-        { _openApiInfo = _openApiInfo s <> _openApiInfo t
+        { _openApiOpenapi = _openApiOpenapi s <> _openApiOpenapi t
+        , _openApiInfo = _openApiInfo s <> _openApiInfo t
         , _openApiServers = _openApiServers s <> _openApiServers t
         , _openApiPaths = InsOrdHashMap.unionWith combinePathItem (_openApiPaths s) (_openApiPaths t)
         , _openApiComponents = _openApiComponents s <> _openApiComponents t
