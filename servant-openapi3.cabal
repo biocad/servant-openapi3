@@ -33,8 +33,8 @@ tested-with:
    || ==8.8.4
    || ==8.10.7
    || ==9.0.2
-   || ==9.2.2
-   || ==9.4.3
+   || ==9.2.5
+   || ==9.4.4
 
 extra-source-files:
     README.md
@@ -98,7 +98,7 @@ test-suite doctests
   build-depends:
     base,
     directory >= 1.0,
-    doctest >= 0.11.1 && <0.21,
+    doctest >= 0.11.1 && <0.22,
     servant,
     QuickCheck,
     filepath
