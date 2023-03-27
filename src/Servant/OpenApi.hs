@@ -46,7 +46,21 @@ import           Servant.OpenApi.Internal
 import           Servant.OpenApi.Test
 import           Servant.OpenApi.Internal.Orphans ()
 
--- $setup
+-- $howto
+--
+-- This section explains how to use this library to generate OpenApi specification,
+-- modify it and run automatic tests for a servant API.
+--
+-- For the purposes of this section we will use the following imports and this servant API:
+--
+-- >>> {-# LANGUAGE DataKinds #-}
+-- >>> {-# LANGUAGE DeriveDataTypeable #-}
+-- >>> {-# LANGUAGE DeriveGeneric #-}
+-- >>> {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+-- >>> {-# LANGUAGE OverloadedStrings #-}
+-- >>> {-# LANGUAGE TypeOperators #-}
+-- >>> {-# LANGUAGE NoMonomorphismRestriction #-}
+-- >>>
 -- >>> import Control.Applicative
 -- >>> import Control.Lens
 -- >>> import Data.Aeson
@@ -58,30 +72,7 @@ import           Servant.OpenApi.Internal.Orphans ()
 -- >>> import Test.QuickCheck
 -- >>> import qualified Data.ByteString.Lazy.Char8 as BSL8
 -- >>> import Servant.OpenApi.Internal.Test
--- >>> :set -XDataKinds
--- >>> :set -XDeriveDataTypeable
--- >>> :set -XDeriveGeneric
--- >>> :set -XGeneralizedNewtypeDeriving
--- >>> :set -XOverloadedStrings
--- >>> :set -XTypeOperators
--- >>> data User = User { name :: String, age :: Int } deriving (Show, Generic, Typeable)
--- >>> newtype UserId = UserId Integer deriving (Show, Generic, Typeable, ToJSON)
--- >>> instance ToJSON User
--- >>> instance ToSchema User
--- >>> instance ToSchema UserId
--- >>> instance ToParamSchema UserId
--- >>> type GetUsers = Get '[JSON] [User]
--- >>> type GetUser  = Capture "user_id" UserId :> Get '[JSON] User
--- >>> type PostUser = ReqBody '[JSON] User :> Post '[JSON] UserId
--- >>> type UserAPI  = GetUsers :<|> GetUser :<|> PostUser
-
--- $howto
---
--- This section explains how to use this library to generate OpenApi specification,
--- modify it and run automatic tests for a servant API.
---
--- For the purposes of this section we will use this servant API:
---
+-- >>>
 -- >>> data User = User { name :: String, age :: Int } deriving (Show, Generic, Typeable)
 -- >>> newtype UserId = UserId Integer deriving (Show, Generic, Typeable, ToJSON)
 -- >>> instance ToJSON User
