@@ -287,6 +287,12 @@ instance (HasOpenApi sub) => HasOpenApi (RemoteHost :> sub) where
 instance (HasOpenApi sub) => HasOpenApi (HttpVersion :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
+#if MIN_VERSION_servant(0,20,0)
+-- | @'WithResource'@ combinator does not change our specification at all.
+instance (HasOpenApi sub) => HasOpenApi (WithResource res :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
+#endif
+
 -- | @'WithNamedContext'@ combinator does not change our specification at all.
 instance (HasOpenApi sub) => HasOpenApi (WithNamedContext x c sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
