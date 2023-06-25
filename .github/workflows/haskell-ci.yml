@@ -247,12 +247,12 @@ jobs:
           rm -f cabal.project.local
       - name: constraint set servant-0.20
         run: |
-          if [ $((HCNUMVER >= 81000)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.20' --dependencies-only -j2 all ; fi
-          if [ $((HCNUMVER >= 81000)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.20' all ; fi
+          if [ $((HCNUMVER >= 81000)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.20.*' --dependencies-only -j2 all ; fi
+          if [ $((HCNUMVER >= 81000)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.20.*' all ; fi
       - name: constraint set servant-0.19
         run: |
-          if [ $((HCNUMVER >= 80800 && HCNUMVER < 90400)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.19' --dependencies-only -j2 all ; fi
-          if [ $((HCNUMVER >= 80800 && HCNUMVER < 90400)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.19' all ; fi
+          if [ $((HCNUMVER >= 80800 && HCNUMVER < 90600)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.19.*' --dependencies-only -j2 all ; fi
+          if [ $((HCNUMVER >= 80800 && HCNUMVER < 90600)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.19.*' all ; fi
       - name: constraint set servant-0.18.2
         run: |
           if [ $((HCNUMVER >= 80800 && HCNUMVER < 90000)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='servant ==0.18.2' --dependencies-only -j2 all ; fi
