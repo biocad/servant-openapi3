@@ -76,7 +76,7 @@ library
     Servant.OpenApi.Internal.TypeLevel.Every
     Servant.OpenApi.Internal.TypeLevel.TMap
   hs-source-dirs:      src
-  build-depends:       aeson                     >=1.4.2.0  && <1.6 || >=2.0.1.0 && <2.2
+  build-depends:       aeson                     >=1.4.2.0  && <1.6 || >=2.0.1.0 && <2.3
                      , aeson-pretty              >=0.8.7    && <0.9
                      , base                      >=4.9.1.0  && <4.19
                      , base-compat               >=0.10.5   && <0.14
