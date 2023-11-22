@@ -431,6 +431,11 @@ instance (HasOpenApi (ToServantApi sub)) => HasOpenApi (NamedRoutes sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy (ToServantApi sub))
 #endif
 
+#if MIN_VERSION_servant(0,5,0)
+instance (HasOpenApi sub) => HasOpenApi (AuthProtect a :> sub) where
+  toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
+#endif
+
 -- =======================================================================
 -- Below are the definitions that should be in Servant.API.ContentTypes
 -- =======================================================================
