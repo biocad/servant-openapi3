@@ -19,15 +19,16 @@ tested-with:
    || ==8.10.7
    || ==9.0.2
    || ==9.2.8
-   || ==9.4.5
-   || ==9.6.2
+   || ==9.4.8
+   || ==9.6.3
+   || ==9.8.1
 
 library
   ghc-options:      -Wall
   hs-source-dirs: src/
   exposed-modules:
     Todo
-  build-depends:  base
+  build-depends:  base < 5
                 , aeson
                 , aeson-pretty
                 , bytestring
