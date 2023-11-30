@@ -402,6 +402,8 @@ instance (ToSchema a, AllAccept cs, HasOpenApi sub, KnownSymbol (FoldDescription
       (defs, ref) = runDeclare (declareSchemaRef (Proxy :: Proxy a)) mempty
       reqBody = (mempty :: RequestBody)
         & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
+        -- ReqBody' is always required, as per the Servant documentation
+        & required ?~ True
         & content .~ InsOrdHashMap.fromList [(t, mempty & schema ?~ ref) | t <- allContentType (Proxy :: Proxy cs)]
 
 -- | This instance is an approximation.
