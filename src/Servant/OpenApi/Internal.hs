@@ -447,11 +447,15 @@ instance (Accept c, AllAccept cs) => AllAccept (c ': cs) where
 class ToResponseHeader h where
   toResponseHeader :: Proxy h -> (HeaderName, OpenApi.Header)
 
-instance (KnownSymbol sym, ToParamSchema a) => ToResponseHeader (Header sym a) where
-  toResponseHeader _ = (hname, mempty & schema ?~ hschema)
+instance (KnownSymbol sym, ToParamSchema a, KnownSymbol (FoldDescription mods)) => ToResponseHeader (Header' mods  sym a) where
+  toResponseHeader _ = (hname, header)
     where
       hname = Text.pack (symbolVal (Proxy :: Proxy sym))
-      hschema = Inline $ toParamSchema (Proxy :: Proxy a)
+      transDesc ""   = Nothing
+      transDesc desc = Just (Text.pack desc)
+      header = mempty
+        & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
+        & schema ?~ Inline (toParamSchema (Proxy :: Proxy a))
 
 class AllToResponseHeader hs where
   toAllResponseHeaders :: Proxy hs -> InsOrdHashMap HeaderName OpenApi.Header
