@@ -83,6 +83,11 @@ class HasOpenApi api where
 instance HasOpenApi Raw where
   toOpenApi _ = mempty & paths . at "/" ?~ mempty
 
+#if MIN_VERSION_servant(0,20,0)
+instance HasOpenApi RawM where
+  toOpenApi _ = mempty & paths . at "/" ?~ mempty
+#endif
+
 instance HasOpenApi EmptyAPI where
   toOpenApi _ = mempty
 
