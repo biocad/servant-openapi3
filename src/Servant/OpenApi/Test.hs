@@ -7,7 +7,9 @@
 -- Automatic tests for servant API against OpenApi spec.
 module Servant.OpenApi.Test (
   validateEveryToJSON,
+  validateEveryToJSON',
   validateEveryToJSONWithPatternChecker,
+  validateEveryToJSONWithPatternChecker',
 ) where
 
 import           Servant.OpenApi.Internal.Test

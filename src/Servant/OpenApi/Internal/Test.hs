@@ -17,7 +17,7 @@ import qualified Data.Text.Lazy.Encoding        as TL
 import           Data.Typeable
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
-import           Test.QuickCheck                (Arbitrary, Property, counterexample, property)
+import           Test.QuickCheck                (Arbitrary, Property, counterexample, property, forAll, Gen, arbitrary)
 
 import           Servant.API
 import           Servant.OpenApi.Internal.TypeLevel
@@ -85,6 +85,22 @@ validateEveryToJSON
 validateEveryToJSON _ = props
   (Proxy :: Proxy [ToJSON, ToSchema])
   (maybeCounterExample . prettyValidateWith validateToJSON)
+  id
+  (Proxy :: Proxy (BodyTypes JSON api))
+
+-- | Same as @'validateEveryToJSON'@ but allows specifying a generator adapter.
+-- This can be useful to reduce the size parameter to speed up the tests.
+validateEveryToJSON'
+  :: forall proxy api .
+     TMap (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema])
+          (BodyTypes JSON api)
+  => (forall x. Gen x -> Gen x)
+  -> proxy api   -- ^ Servant API.
+  -> Spec
+validateEveryToJSON' regen _ = props
+  (Proxy :: Proxy [ToJSON, ToSchema])
+  (maybeCounterExample . prettyValidateWith validateToJSON)
+  regen
   (Proxy :: Proxy (BodyTypes JSON api))
 
 -- | Verify that every type used with @'JSON'@ content type in a servant API
@@ -98,6 +114,22 @@ validateEveryToJSONWithPatternChecker :: forall proxy api. TMap (Every [Typeable
 validateEveryToJSONWithPatternChecker checker _ = props
   (Proxy :: Proxy [ToJSON, ToSchema])
   (maybeCounterExample . prettyValidateWith (validateToJSONWithPatternChecker checker))
+  id
+  (Proxy :: Proxy (BodyTypes JSON api))
+
+-- | Same as @'validateEveryToJSONWithPatternChecker'@ but allows specifying a generator adapter.
+-- This can be useful to reduce the size parameter to speed up the tests.
+--
+-- For validation without patterns see @'validateEveryToJSON''@.
+validateEveryToJSONWithPatternChecker' :: forall proxy api. TMap (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema]) (BodyTypes JSON api) =>
+  (Pattern -> Text -> Bool)   -- ^ @'Pattern'@ checker.
+  -> (forall x. Gen x -> Gen x)
+  -> proxy api                -- ^ Servant API.
+  -> Spec
+validateEveryToJSONWithPatternChecker' checker regen _ = props
+  (Proxy :: Proxy [ToJSON, ToSchema])
+  (maybeCounterExample . prettyValidateWith (validateToJSONWithPatternChecker checker))
+  regen
   (Proxy :: Proxy (BodyTypes JSON api))
 
 -- * QuickCheck-related stuff
@@ -111,6 +143,7 @@ validateEveryToJSONWithPatternChecker checker _ = props
 --      props
 --        (Proxy :: Proxy [Eq, Show, Read])
 --        (\x -> read (show x) === x)
+--        id
 --        (Proxy :: Proxy [Bool, Int, String])
 -- :}
 -- <BLANKLINE>
@@ -126,15 +159,16 @@ validateEveryToJSONWithPatternChecker checker _ = props
 props :: forall p p'' cs xs. TMap (Every (Typeable ': Show ': Arbitrary ': cs)) xs =>
   p cs                                          -- ^ A list of constraints.
   -> (forall x. EveryTF cs x => x -> Property)  -- ^ Property predicate.
+  -> (forall x. Gen x -> Gen x)                 -- ^ Generator adapter, can be useful to adjust the size parameter (ie. resize 3)
   -> p'' xs                                     -- ^ A list of types.
   -> Spec
-props _ f px = sequence_ specs
+props _ f regen px = sequence_ specs
   where
     specs :: [Spec]
     specs = tmapEvery (Proxy :: Proxy (Typeable ': Show ': Arbitrary ': cs)) aprop px
 
     aprop :: forall p' a. (EveryTF cs a, Typeable a, Show a, Arbitrary a) => p' a -> Spec
-    aprop _ = prop (show (typeOf (undefined :: a))) (f :: a -> Property)
+    aprop _ = prop (show (typeOf (undefined :: a))) (forAll (regen arbitrary) (f :: a -> Property))
 
 -- | Pretty print validation errors
 -- together with actual JSON and OpenApi Schema
