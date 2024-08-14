@@ -86,6 +86,10 @@ instance HasOpenApi Raw where
 instance HasOpenApi EmptyAPI where
   toOpenApi _ = mempty
 
+-- | Ignore @'EmptyAPI'@ as part of route in server handlers.
+instance HasOpenApi api => HasOpenApi (EmptyAPI :> api) where
+  toOpenApi _ = toOpenApi (Proxy @api)
+
 -- | All operations of sub API.
 -- This is similar to @'operationsOf'@ but ensures that operations
 -- indeed belong to the API at compile time.
