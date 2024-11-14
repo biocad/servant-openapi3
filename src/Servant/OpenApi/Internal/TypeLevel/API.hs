@@ -86,7 +86,7 @@ type AddBodyType c cs a as = If (Elem c cs) (a ': as) as
 -- completely empty on responses to requests that only accept 'application/json', while
 -- setting the content-type in the response accordingly.)
 type family BodyTypes' c api :: [*] where
-  BodyTypes' c (Verb verb b cs (Headers hdrs a)) = AddBodyType c cs a '[]
+  BodyTypes' c (Verb verb b cs (Headers hdrs a)) = BodyTypes' c (Verb verb b cs a)
   BodyTypes' c (Verb verb b cs NoContent) = '[]
   BodyTypes' c (Verb verb b cs a) = AddBodyType c cs a '[]
   BodyTypes' c (ReqBody' mods cs a :> api) = AddBodyType c cs a (BodyTypes' c api)
