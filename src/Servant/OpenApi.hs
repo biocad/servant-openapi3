@@ -157,7 +157,8 @@ import           Servant.OpenApi.Internal.Orphans ()
 --                                 "$ref": "#/components/schemas/User"
 --                             }
 --                         }
---                     }
+--                     },
+--                     "required": true
 --                 },
 --                 "responses": {
 --                     "200": {
@@ -288,7 +289,8 @@ import           Servant.OpenApi.Internal.Orphans ()
 --                                 "$ref": "#/components/schemas/User"
 --                             }
 --                         }
---                     }
+--                     },
+--                     "required": true
 --                 },
 --                 "responses": {
 --                     "200": {
@@ -420,7 +422,8 @@ import           Servant.OpenApi.Internal.Orphans ()
 --                                 "$ref": "#/components/schemas/User"
 --                             }
 --                         }
---                     }
+--                     },
+--                     "required": true
 --                 },
 --                 "responses": {
 --                     "200": {
