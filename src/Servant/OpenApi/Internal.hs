@@ -390,7 +390,7 @@ instance (KnownSymbol sym, ToParamSchema a, HasOpenApi sub, SBoolI (FoldRequired
         & in_ .~ ParamHeader
         & schema ?~ (Inline $ toParamSchema (Proxy :: Proxy a))
 
-instance (ToSchema a, AllAccept cs, HasOpenApi sub, KnownSymbol (FoldDescription mods)) => HasOpenApi (ReqBody' mods cs a :> sub) where
+instance (ToSchema a, AllAccept cs, HasOpenApi sub, KnownSymbol (FoldDescription mods), SBoolI (FoldRequired mods)) => HasOpenApi (ReqBody' mods cs a :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
     & addRequestBody reqBody
     & addDefaultResponse400 tname
@@ -402,6 +402,7 @@ instance (ToSchema a, AllAccept cs, HasOpenApi sub, KnownSymbol (FoldDescription
       (defs, ref) = runDeclare (declareSchemaRef (Proxy :: Proxy a)) mempty
       reqBody = (mempty :: RequestBody)
         & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
+        & required .~ (if reflectBool (Proxy :: Proxy (FoldRequired mods)) then Just True else Nothing)
         & content .~ InsOrdHashMap.fromList [(t, mempty & schema ?~ ref) | t <- allContentType (Proxy :: Proxy cs)]
 
 -- | This instance is an approximation.
