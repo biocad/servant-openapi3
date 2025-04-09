@@ -22,6 +22,8 @@ tested-with:
    || ==9.4.8
    || ==9.6.3
    || ==9.8.1
+   || ==9.10.2
+   || ==9.12.1
 
 library
   ghc-options:      -Wall
