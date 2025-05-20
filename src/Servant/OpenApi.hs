@@ -157,7 +157,8 @@ import           Servant.OpenApi.Internal.Orphans ()
 --                                 "$ref": "#/components/schemas/User"
 --                             }
 --                         }
---                     }
+--                     },
+--                     "required": true
 --                 },
 --                 "responses": {
 --                     "200": {
@@ -288,7 +289,8 @@ import           Servant.OpenApi.Internal.Orphans ()
 --                                 "$ref": "#/components/schemas/User"
 --                             }
 --                         }
---                     }
+--                     },
+--                     "required": true
 --                 },
 --                 "responses": {
 --                     "200": {
@@ -420,7 +422,8 @@ import           Servant.OpenApi.Internal.Orphans ()
 --                                 "$ref": "#/components/schemas/User"
 --                             }
 --                         }
---                     }
+--                     },
+--                     "required": true
 --                 },
 --                 "responses": {
 --                     "200": {
@@ -512,7 +515,7 @@ import           Servant.OpenApi.Internal.Orphans ()
 -- UserId...
 -- ...
 -- Finished in ... seconds
--- ...3 examples, 0 failures...
+-- 3 examples, 0 failures
 --
 -- Although servant is great, chances are that your API clients don't use Haskell.
 -- In many cases @swagger.json@ serves as a specification, not a Haskell type.

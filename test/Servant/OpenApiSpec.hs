@@ -65,6 +65,7 @@ newtype TodoId = TodoId String deriving (Generic)
 instance ToParamSchema TodoId
 
 type TodoAPI = "todo" :> Capture "id" TodoId :> Get '[JSON] Todo
+          :<|> "todo" :> Capture "id" TodoId :> ReqBody '[JSON] Todo :> Post '[JSON] Todo
 
 todoAPI :: Value
 todoAPI = [aesonQQ|
@@ -107,6 +108,46 @@ todoAPI = [aesonQQ|
         "responses": {
           "404": {
             "description": "`id` not found"
+          },
+          "200": {
+            "content": {
+              "application/json;charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Todo"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id"
+          }
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json;charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/Todo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "404": {
+            "description": "`id` not found"
+          },
+          "400": {
+            "description": "Invalid `body`"
           },
           "200": {
             "content": {
