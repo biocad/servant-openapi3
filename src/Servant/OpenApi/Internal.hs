@@ -12,9 +12,7 @@
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-#if __GLASGOW_HASKELL__ >= 806
 {-# LANGUAGE UndecidableInstances  #-}
-#endif
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Servant.OpenApi.Internal where
 
@@ -473,6 +471,9 @@ instance AllToResponseHeader hs => AllToResponseHeader (HList hs) where
 
 type DeclareDefinition = Declare (Definitions Schema)
 
+class IsSwaggerResponse a where
+  responseSwagger :: DeclareDefinition Response
+
 instance
   (AllToResponseHeader hs, IsSwaggerResponse r) =>
   IsSwaggerResponse (WithHeaders hs a r)
@@ -481,12 +482,6 @@ instance
     fmap
       (headers .~ fmap Inline (toAllResponseHeaders (Proxy @hs)))
       (responseSwagger @r)
-
-class IsSwaggerResponseList (as :: [Type]) where
-  responseListSwagger :: DeclareDefinition (InsOrdHashMap HttpStatusCode Response)
-
-class IsSwaggerResponse a where
-  responseSwagger :: DeclareDefinition Response
 
 simpleResponseSwagger :: forall a cs desc. (ToSchema a, KnownSymbol desc, AllMime cs) => DeclareDefinition Response
 simpleResponseSwagger = do
@@ -508,9 +503,6 @@ instance
   -- Defaulting this to JSON, as openapi3 needs something to map a schema against.
   responseSwagger = simpleResponseSwagger @a @'[JSON] @desc
 
-instance IsSwaggerResponseList '[] where
-  responseListSwagger = pure mempty
-
 instance
   (KnownSymbol desc, ToSchema a, Accept ct) =>
   IsSwaggerResponse (RespondAs (ct :: Type) s desc a)
@@ -525,6 +517,12 @@ instance
     pure $
       mempty
         & description .~ Text.pack (symbolVal (Proxy @desc))
+
+class IsSwaggerResponseList (as :: [Type]) where
+  responseListSwagger :: DeclareDefinition (InsOrdHashMap HttpStatusCode Response)
+
+instance IsSwaggerResponseList '[] where
+  responseListSwagger = pure mempty
 
 instance
   ( IsSwaggerResponse a,
