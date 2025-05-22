@@ -205,6 +205,29 @@ jobs:
           echo "package example" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           cat >> cabal.project <<EOF
+          source-repository-package
+            type:     git
+            location: https://github.com/haskell-servant/servant
+            tag:      servant-0.20.3.0
+            subdir:   ./servant
+
+          source-repository-package
+            type:     git
+            location: https://github.com/haskell-servant/servant
+            tag:      servant-0.20.3.0
+            subdir:   ./servant-server
+
+          source-repository-package
+            type:     git
+            location: https://github.com/haskell-servant/servant
+            tag:      servant-0.20.3.0
+            subdir:   ./servant-client
+
+          source-repository-package
+            type:     git
+            location: https://github.com/haskell-servant/servant
+            tag:      servant-0.20.3.0
+            subdir:   ./servant-client-core
           EOF
           $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: any.$_ installed\n" unless /^(example|servant-openapi3)$/; }' >> cabal.project.local
           cat cabal.project
