@@ -32,6 +32,7 @@ type TodoAPI
  :<|> "todo" :> Capture "id" TodoId :> Get '[JSON] Todo
  :<|> "todo" :> Capture "id" TodoId :> ReqBody '[JSON] Todo :> Put '[JSON] TodoId
  :<|> "todo" :> "choices" :> MultipleChoicesInt
+ 
 -- | API for serving @swagger.json@.
 type SwaggerAPI = "swagger.json" :> Get '[JSON] OpenApi
 
