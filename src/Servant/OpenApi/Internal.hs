@@ -482,7 +482,7 @@ instance
       (headers .~ fmap Inline (toAllResponseHeaders (Proxy @hs)))
       (responseSwagger @r)
 
-class IsSwaggerResponseList as where
+class IsSwaggerResponseList (as :: [Type]) where
   responseListSwagger :: DeclareDefinition (InsOrdHashMap HttpStatusCode Response)
 
 class IsSwaggerResponse a where
