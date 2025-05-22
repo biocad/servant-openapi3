@@ -4,6 +4,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE DerivingVia                #-}
 module Todo where
 
 import           Control.Lens
@@ -18,6 +19,8 @@ import           Data.Typeable              (Typeable)
 import           GHC.Generics
 import           Servant
 import           Servant.OpenApi
+import           qualified Generics.SOP as GSOP
+import           Servant.API.MultiVerb
 
 todoAPI :: Proxy TodoAPI
 todoAPI = Proxy
@@ -28,7 +31,7 @@ type TodoAPI
  :<|> "todo" :> ReqBody '[JSON] Todo :> Post '[JSON] TodoId
  :<|> "todo" :> Capture "id" TodoId :> Get '[JSON] Todo
  :<|> "todo" :> Capture "id" TodoId :> ReqBody '[JSON] Todo :> Put '[JSON] TodoId
-
+ :<|> "todo" :> "choices" :> MultipleChoicesInt
 -- | API for serving @swagger.json@.
 type SwaggerAPI = "swagger.json" :> Get '[JSON] OpenApi
 
@@ -71,3 +74,28 @@ server = return todoSwagger :<|> error "not implemented"
 -- | Output generated @swagger.json@ file for the @'TodoAPI'@.
 writeSwaggerJSON :: IO ()
 writeSwaggerJSON = BL8.writeFile "example/swagger.json" (encodePretty todoSwagger)
+
+type MultiResponses =
+  '[ RespondEmpty 400 "Negative"
+   , Respond 200 "Even number" Bool
+   , Respond 200 "Odd number" Int
+   ]
+
+-- All possible return types
+data MultiResult
+  = NegativeNumber
+  | Even Bool
+  | Odd Int
+  deriving stock (Generic)
+  deriving (AsUnion MultiResponses)
+    via GenericAsUnion MultiResponses MultiResult
+
+instance GSOP.Generic MultiResult
+
+type MultipleChoicesInt =
+  Capture "int" Int
+  :> MultiVerb
+    'GET
+    '[JSON]
+    MultiResponses
+    MultiResult

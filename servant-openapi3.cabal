@@ -88,10 +88,13 @@ library
                      , insert-ordered-containers >=0.2.1.0  && <0.3
                      , lens                      >=4.17     && <5.4
                      , servant                   >=0.17     && <0.21
+                     , servant-server            >=0.17     && <0.21
+                     , servant-client-core       >=0.17     && <0.21
                      , singleton-bool            >=0.1.4    && <0.2
                      , openapi3                  >=3.2.3    && <3.3
                      , text                      >=1.2.3.0  && <3
                      , unordered-containers      >=0.2.9.0  && <0.3
+                     , generics-sop              >=0.5.1
 
                      , hspec
                      , QuickCheck

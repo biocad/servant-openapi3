@@ -41,6 +41,7 @@ library
                 , openapi3
                 , text
                 , time
+                , generics-sop
   default-language: Haskell2010
 
 executable swagger-server
