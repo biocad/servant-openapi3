@@ -469,6 +469,7 @@ instance (ToResponseHeader h, AllToResponseHeader hs) => AllToResponseHeader (h 
 instance AllToResponseHeader hs => AllToResponseHeader (HList hs) where
   toAllResponseHeaders _ = toAllResponseHeaders (Proxy :: Proxy hs)
 
+#if MIN_VERSION_servant(0,20,3)
 type DeclareDefinition = Declare (Definitions Schema)
 
 class IsSwaggerResponse a where
@@ -620,3 +621,4 @@ instance
               . List.listToMaybe
               . toList
       refResps = Inline . addMime <$> resps
+#endif
