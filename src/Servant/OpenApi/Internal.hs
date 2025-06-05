@@ -39,10 +39,12 @@ import           Servant.API
 import           Servant.API.Description    (FoldDescription, reflectDescription)
 import           Servant.API.Modifiers      (FoldRequired)
 import           Servant.OpenApi.Internal.TypeLevel.API
-import           Servant.API.MultiVerb
 import           Data.Kind (Type)
 import           Servant.API.ContentTypes (AllMime, allMime)
+#if MIN_VERSION_servant(0,20,3)
 import qualified Servant.Server.Internal.ResponseRender as Server
+import           Servant.API.MultiVerb
+#endif
 import qualified Data.Maybe as List
 
 -- | Generate a OpenApi specification for a servant API.
