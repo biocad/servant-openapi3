@@ -1,25 +1,25 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE RankNTypes           #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeOperators        #-}
-#if __GLASGOW_HASKELL__ >= 806
-{-# LANGUAGE UndecidableInstances #-}
-#endif
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Servant.OpenApi.Internal where
 
 import Prelude ()
 import Prelude.Compat
 
-#if MIN_VERSION_servant(0,18,1)
-import           Control.Applicative                    ((<|>))
-#endif
+import           Control.Applicative        ((<|>))
 import           Control.Lens
 import           Data.Aeson
 import           Data.Foldable              (toList)
@@ -38,11 +38,14 @@ import           Network.HTTP.Media         (MediaType)
 import           Servant.API
 import           Servant.API.Description    (FoldDescription, reflectDescription)
 import           Servant.API.Modifiers      (FoldRequired)
-#if MIN_VERSION_servant(0,19,0)
-import           Servant.API.Generic        (ToServantApi)
-#endif
-
 import           Servant.OpenApi.Internal.TypeLevel.API
+import           Data.Kind (Type)
+import           Servant.API.ContentTypes (AllMime, allMime)
+#if MIN_VERSION_servant(0,20,3)
+import qualified Servant.Server.Internal.ResponseRender as Server
+import           Servant.API.MultiVerb
+#endif
+import qualified Data.Maybe as List
 
 -- | Generate a OpenApi specification for a servant API.
 --
@@ -467,3 +470,157 @@ instance (ToResponseHeader h, AllToResponseHeader hs) => AllToResponseHeader (h 
 
 instance AllToResponseHeader hs => AllToResponseHeader (HList hs) where
   toAllResponseHeaders _ = toAllResponseHeaders (Proxy :: Proxy hs)
+
+#if MIN_VERSION_servant(0,20,3)
+type DeclareDefinition = Declare (Definitions Schema)
+
+class IsSwaggerResponse a where
+  responseSwagger :: DeclareDefinition Response
+
+instance
+  (AllToResponseHeader hs, IsSwaggerResponse r) =>
+  IsSwaggerResponse (WithHeaders hs a r)
+  where
+  responseSwagger =
+    fmap
+      (headers .~ fmap Inline (toAllResponseHeaders (Proxy @hs)))
+      (responseSwagger @r)
+
+simpleResponseSwagger :: forall a cs desc. (ToSchema a, KnownSymbol desc, AllMime cs) => DeclareDefinition Response
+simpleResponseSwagger = do
+  ref <- declareSchemaRef (Proxy @a)
+  let resps :: InsOrdHashMap MediaType MediaTypeObject
+      resps = InsOrdHashMap.fromList $ (,MediaTypeObject (pure ref) Nothing mempty mempty) <$> cs
+  pure $
+    mempty
+      & description .~ Text.pack (symbolVal (Proxy @desc))
+      & content .~ resps
+  where
+    cs :: [MediaType]
+    cs = allMime $ Proxy @cs
+
+instance
+  (KnownSymbol desc, ToSchema a) =>
+  IsSwaggerResponse (Respond s desc a)
+  where
+  -- Defaulting this to JSON, as openapi3 needs something to map a schema against.
+  responseSwagger = simpleResponseSwagger @a @'[JSON] @desc
+
+instance
+  (KnownSymbol desc, ToSchema a, Accept ct) =>
+  IsSwaggerResponse (RespondAs (ct :: Type) s desc a)
+  where
+  responseSwagger = simpleResponseSwagger @a @'[ct] @desc
+
+instance
+  (KnownSymbol desc) =>
+  IsSwaggerResponse (RespondEmpty s desc)
+  where
+  responseSwagger =
+    pure $
+      mempty
+        & description .~ Text.pack (symbolVal (Proxy @desc))
+
+class IsSwaggerResponseList (as :: [Type]) where
+  responseListSwagger :: DeclareDefinition (InsOrdHashMap HttpStatusCode Response)
+
+instance IsSwaggerResponseList '[] where
+  responseListSwagger = pure mempty
+
+instance
+  ( IsSwaggerResponse a,
+    KnownNat (Server.ResponseStatus a),
+    IsSwaggerResponseList as
+  ) =>
+  IsSwaggerResponseList (a ': as)
+  where
+  responseListSwagger =
+    InsOrdHashMap.insertWith
+      combineResponseSwagger
+      (fromIntegral (natVal (Proxy @(Server.ResponseStatus a))))
+      <$> responseSwagger @a
+      <*> responseListSwagger @as
+
+combineResponseSwagger :: Response -> Response -> Response
+combineResponseSwagger r1 r2 =
+  r1
+    & description <>~ ("\n\n" <> r2 ^. description)
+    & content %~ flip (InsOrdHashMap.unionWith combineMediaTypeObject) (r2 ^. content)
+
+combineMediaTypeObject :: MediaTypeObject -> MediaTypeObject -> MediaTypeObject
+combineMediaTypeObject m1 m2 =
+  m1 & schema .~ merge (m1 ^. schema) (m2 ^. schema)
+  where
+    merge Nothing a = a
+    merge a Nothing = a
+    merge (Just (Inline a)) (Just (Inline b)) = pure $ Inline $ combineSwaggerSchema a b
+    merge a@(Just (Ref _)) _ = a
+    merge _ a@(Just (Ref _)) = a
+
+combineSwaggerSchema :: Schema -> Schema -> Schema
+combineSwaggerSchema s1 s2
+  -- if they are both errors, merge label enums
+  | notNullOf (properties . ix "code") s1
+      && notNullOf (properties . ix "code") s2 =
+      s1
+        & properties . ix "label" . _Inline . enum_ . _Just
+          <>~ (s2 ^. properties . ix "label" . _Inline . enum_ . _Just)
+  | otherwise = s1
+
+instance
+  (OpenApiMethod method, IsSwaggerResponseList as) =>
+  HasOpenApi (MultiVerb method '() as r)
+  where
+  toOpenApi _ =
+    mempty
+      & components . schemas <>~ defs
+      & paths
+        . at "/"
+        ?~ ( mempty
+               & method
+                 ?~ ( mempty
+                        & responses . responses .~ refResps
+                    )
+           )
+    where
+      method = openApiMethod (Proxy @method)
+      (defs, resps) = runDeclare (responseListSwagger @as) mempty
+      refResps = Inline <$> resps
+
+instance
+  (OpenApiMethod method, IsSwaggerResponseList as, AllMime cs) =>
+  HasOpenApi (MultiVerb method (cs :: [Type]) as r)
+  where
+  toOpenApi _ =
+    mempty
+      & components . schemas <>~ defs
+      & paths
+        . at "/"
+        ?~ ( mempty
+               & method
+                 ?~ ( mempty
+                        & responses . responses .~ refResps
+                    )
+           )
+    where
+      method = openApiMethod (Proxy @method)
+      -- This has our content types.
+      cs = allMime (Proxy @cs)
+      -- This has our schemas
+      (defs, resps) = runDeclare (responseListSwagger @as) mempty
+      -- We need to zip them together, and stick it all back into the contentMap
+      -- Since we have a single schema per type, and are only changing the content-types,
+      -- we should be able to pick a schema out of the resps' map, and then use it for
+      -- all of the values of cs
+      addMime :: Response -> Response
+      addMime resp =
+        resp
+          & content
+            %~
+            -- pick out an element from the map, if any exist.
+            -- These will all have the same schemas, and we are reapplying the content types.
+            foldMap (\c -> InsOrdHashMap.fromList $ (,c) <$> cs)
+              . List.listToMaybe
+              . toList
+      refResps = Inline . addMime <$> resps
+#endif
