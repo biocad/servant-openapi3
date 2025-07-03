@@ -94,7 +94,6 @@ type family BodyTypes' c api :: [*] where
   BodyTypes' c (a :<|> b) = AppendList (BodyTypes' c a) (BodyTypes' c b)
 #if MIN_VERSION_servant(0,19,0)
   BodyTypes' c (NamedRoutes api) = BodyTypes' c (ToServantApi api)
-#endif
   -- Handle UVerb by recursively expanding it to BodyTypes' c (Verb ...)
   -- Unwrap WithStatus explicitly to avoid trying to expand
   -- `Verb .. (WithStatus n a)` later on.
@@ -107,5 +106,5 @@ type family BodyTypes' c api :: [*] where
   BodyTypes' c (UVerb verb cs (a ': as)) =
     AppendList (BodyTypes' c (Verb verb (StatusOf a) cs a)) (BodyTypes' c (UVerb verb cs as))
   BodyTypes' c (UVerb verb cs '[]) = '[]
-
+#endif
   BodyTypes' c api = '[]
