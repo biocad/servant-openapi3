@@ -1,3 +1,13 @@
+Unreleased
+----------
+
+* The `HasOpenApi` instance that recurses through `UVerb` responses no
+  longer demands `ToSchema NoContent`.
+  - `instance ToSchema (WithStatus s a)` has been removed, as the
+    `WithStatus` is now unwrapped when recursing into a `Verb`.
+* Do not count `NoContent` as a body type if it appears in `Headers
+  hdrs NoContent`.
+
 1.1.8
 -------
 
@@ -14,7 +24,7 @@
 * Support servant-0.15
    - support for 'Stream' and 'StreamBody' combinators
    - orphan 'ToSchema (SourceT m a)' instance
-* Fix BodyTypes to work with generalized ReqBody' 
+* Fix BodyTypes to work with generalized ReqBody'
   [#88](https://github.com/haskell-servant/servant-swagger/pull/88)
 
 1.1.6
